@@ -3,6 +3,12 @@
 A fully transparent agentic memory system you can talk to.
 Every message you send is traced live through a real memory pipeline, so you can watch exactly where it gets stored, why, and how it is recalled later.
 
+## Launch video
+
+[![OpenMemoryUI launch video](assets/openmemoryui-launch.jpg)](assets/openmemoryui-launch.mp4)
+
+[Watch the launch video](assets/openmemoryui-launch.mp4) - a 21-second demo made with Brag/Hyperframes. The same video is embedded in the starter UI.
+
 ## What it shows
 
 The agent's memory is split into four stores, each rendered as a live panel:
