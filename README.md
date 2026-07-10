@@ -49,8 +49,12 @@ Every provider also has a "custom model id" escape hatch for models the list mis
 
 A "how it works" onboarding opens on first visit and stays available from the top bar.
 
+3.5. When you press Enter on the key field, the key is verified against the provider right away - a green "✓ key ok · N models" appears next to it and a note in the chat confirms which models were loaded.
+
 ## Extras worth trying
 
+- **insights**: funnels for your last turn (long-term pool → scored → injected into the prompt; extraction candidates → written vs rejected), a cumulative memory-growth chart, writes by kind, most-recalled memories, and a keyword map showing which words ended up in which store and which ones triggered retrievals.
+- **full trace**: every message you send gets a "full trace" chip that replays that turn step by step - tokenization (with dropped stopwords), every retrieval candidate's score including the rejects, the exact prompt, latency, the raw extraction output, and every write with its destination.
 - **prompt x-ray**: see the exact messages array sent to the model on the last turn, with retrieved memories injected into the system prompt.
 - **end session**: watch working memory get consolidated into a single episodic summary before being wiped, the way real agents survive context-window limits.
 - Say "actually, I prefer..." to watch a semantic memory get updated in place, keeping its edit history.
