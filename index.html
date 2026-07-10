@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Glassbox - transparent agentic memory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0d141f;
+  --ink-2: #121b29;
+  --panel: #17222f;
+  --panel-2: #1d2a3a;
+  --line: #263548;
+  --text: #e8eef5;
+  --muted: #8ca0b3;
+  --faint: #5c7183;
+  --session: #6fd3ff;
+  --episodic: #ffb454;
+  --semantic: #a78bfa;
+  --contextual: #57e6c4;
+  --write: #ffb454;
+  --danger: #f87693;
+  --radius: 10px;
+  --mono: "Spline Sans Mono", ui-monospace, monospace;
+  --body: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 14.5px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+
+/* ---------- App frame ---------- */
+#app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+  gap: 0;
+}
+
+/* ---------- Top bar ---------- */
+#topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--ink-2);
+  flex-wrap: wrap;
+}
+#topbar .brand {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+#topbar .brand .dot-row { display: flex; gap: 3px; }
+#topbar .brand .dot-row i {
+  width: 7px; height: 7px; border-radius: 50%;
+  display: inline-block;
+}
+#topbar .brand .dot-row i:nth-child(1){ background: var(--session); }
+#topbar .brand .dot-row i:nth-child(2){ background: var(--episodic); }
+#topbar .brand .dot-row i:nth-child(3){ background: var(--semantic); }
+#topbar .brand .dot-row i:nth-child(4){ background: var(--contextual); }
+#topbar .brand small {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--faint);
+  font-weight: 400;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+#topbar .spacer { flex: 1; }
+.ctl {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+}
+.ctl select, .ctl input[type="password"], .ctl input[type="text"] {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  outline: none;
+}
+.ctl input:focus, .ctl select:focus { border-color: var(--contextual); }
+.mode-pill {
+  display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden;
+}
+.mode-pill button {
+  background: transparent; color: var(--muted); border: 0;
+  padding: 5px 13px; font-family: var(--mono); font-size: 11.5px;
+}
+.mode-pill button.on { background: var(--contextual); color: #06251d; font-weight: 600; }
+.tbtn {
+  background: var(--panel); color: var(--muted);
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 5px 11px; font-family: var(--mono); font-size: 11.5px;
+}
+.tbtn:hover { color: var(--text); border-color: var(--faint); }
+.tbtn.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+/* ---------- Main grid ---------- */
+#main {
+  display: grid;
+  grid-template-columns: minmax(360px, 42fr) minmax(420px, 58fr);
+  min-height: 0;
+  gap: 14px;
+  padding: 14px 18px;
+}
+
+/* ---------- Chat column ---------- */
+#chatCol {
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  min-height: 0;
+  min-width: 0;
+  gap: 10px;
+}
+#chatScroll {
+  overflow-y: auto;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+.msg { max-width: 88%; }
+.msg .who {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--faint); margin-bottom: 4px;
+}
+.msg .bubble {
+  padding: 10px 13px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg.user { align-self: flex-end; text-align: right; }
+.msg.user .bubble {
+  background: #23415a;
+  border: 1px solid #2f5578;
+  text-align: left;
+}
+.msg.agent { align-self: flex-start; }
+.msg.agent .bubble {
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.msg.system-note { align-self: center; max-width: 100%; }
+.msg.system-note .bubble {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+.msg .meta-chips { margin-top: 6px; display: flex; gap: 5px; flex-wrap: wrap; }
+.msg.user .meta-chips { justify-content: flex-end; }
+.chip {
+  font-family: var(--mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted);
+  background: var(--ink);
+  cursor: pointer;
+}
+.chip:hover { color: var(--text); }
+.chip.w-session { border-color: var(--session); color: var(--session); }
+.chip.w-episodic { border-color: var(--episodic); color: var(--episodic); }
+.chip.w-semantic { border-color: var(--semantic); color: var(--semantic); }
+.chip.w-contextual { border-color: var(--contextual); color: var(--contextual); }
+
+/* pipeline */
+#pipeline {
+  display: flex; align-items: stretch; gap: 6px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--ink-2); padding: 8px 10px;
+  overflow-x: auto;
+}
+.stage {
+  flex: 1 0 auto; min-width: 92px; max-width: 150px;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 8px; border-radius: 7px;
+  border: 1px solid transparent;
+  opacity: 0.45;
+  transition: opacity .25s, border-color .25s, background .25s;
+}
+.stage .s-name {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.7px;
+  text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; gap: 5px;
+  white-space: nowrap;
+}
+.stage .s-name i {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--faint);
+  display: inline-block; flex: none;
+}
+.stage .s-note { font-size: 11px; color: var(--faint); line-height: 1.3; min-height: 14px; }
+.stage.active {
+  opacity: 1; border-color: var(--contextual); background: rgba(87,230,196,0.06);
+}
+.stage.active .s-name { color: var(--contextual); }
+.stage.active .s-name i { background: var(--contextual); box-shadow: 0 0 8px var(--contextual); }
+.stage.done { opacity: 0.85; }
+.stage.done .s-name i { background: var(--contextual); }
+
+/* composer */
+#composer {
+  display: flex; gap: 8px;
+}
+#composer textarea {
+  flex: 1;
+  resize: none;
+  height: 52px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 14.5px;
+  padding: 13px 14px;
+  outline: none;
+}
+#composer textarea:focus { border-color: var(--session); }
+#sendBtn {
+  width: 92px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--contextual);
+  color: #06251d;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+}
+#sendBtn:disabled { background: var(--panel-2); color: var(--faint); cursor: wait; }
+
+/* ---------- Memory column ---------- */
+#memCol {
+  display: grid;
+  grid-template-rows: auto 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "session session"
+    "episodic semantic"
+    "contextual contextual";
+  gap: 14px;
+  min-height: 0;
+  min-width: 0;
+}
+.mem-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  transition: box-shadow .3s, border-color .3s;
+}
+.mem-panel[data-type="session"] { grid-area: session; max-height: 210px; }
+.mem-panel[data-type="episodic"] { grid-area: episodic; }
+.mem-panel[data-type="semantic"] { grid-area: semantic; }
+.mem-panel[data-type="contextual"] { grid-area: contextual; }
+.mem-panel.flash-session { border-color: var(--session); box-shadow: 0 0 22px rgba(111,211,255,.25); }
+.mem-panel.flash-episodic { border-color: var(--episodic); box-shadow: 0 0 22px rgba(255,180,84,.25); }
+.mem-panel.flash-semantic { border-color: var(--semantic); box-shadow: 0 0 22px rgba(167,139,250,.28); }
+.mem-panel.flash-contextual { border-color: var(--contextual); box-shadow: 0 0 22px rgba(87,230,196,.25); }
+
+.mem-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.mem-head .swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.mem-head h2 {
+  font-family: var(--display);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.mem-head .sub {
+  font-family: var(--mono); font-size: 10px; color: var(--faint);
+  letter-spacing: 0.6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mem-head .count {
+  margin-left: auto;
+  font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+  background: var(--ink); border: 1px solid var(--line);
+  padding: 1px 7px; border-radius: 999px;
+  flex: none;
+}
+.mem-head .whatis {
+  flex: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--muted); font-family: var(--mono); font-size: 11px;
+  line-height: 1;
+}
+.mem-head .whatis:hover { color: var(--text); border-color: var(--faint); }
+.mem-body {
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  flex: 1;
+}
+.empty-note {
+  color: var(--faint); font-size: 12.5px; padding: 10px 8px;
+  font-style: italic;
+}
+
+/* memory items */
+.mem-item {
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: border-color .15s, transform .15s;
+  position: relative;
+}
+.mem-item:hover { border-color: var(--faint); transform: translateX(2px); }
+.mem-item .mi-top {
+  display: flex; align-items: baseline; gap: 7px; margin-bottom: 2px;
+  flex-wrap: wrap;
+}
+.mem-item .kind {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 1px;
+  text-transform: uppercase; padding: 1px 6px; border-radius: 4px;
+  flex: none;
+}
+.kind.fact { background: rgba(167,139,250,.15); color: var(--semantic); }
+.kind.preference { background: rgba(248,118,147,.14); color: var(--danger); }
+.kind.skill { background: rgba(111,211,255,.13); color: var(--session); }
+.kind.episode { background: rgba(255,180,84,.14); color: var(--episodic); }
+.kind.turn-user { background: rgba(111,211,255,.13); color: var(--session); }
+.kind.turn-agent { background: rgba(140,160,179,.14); color: var(--muted); }
+.mem-item .mi-when {
+  font-family: var(--mono); font-size: 9.5px; color: var(--faint); margin-left: auto;
+}
+.mem-item .mi-content { font-size: 13px; word-break: break-word; }
+.mem-item .mi-foot {
+  margin-top: 4px;
+  font-family: var(--mono); font-size: 9.5px; color: var(--faint);
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.mem-item.just-written { animation: writeflash 1.6s ease-out; }
+@keyframes writeflash {
+  0% { border-color: var(--write); background: rgba(255,180,84,.16); }
+  100% { border-color: var(--line); background: var(--ink-2); }
+}
+.mem-item.just-updated { animation: updateflash 1.6s ease-out; }
+@keyframes updateflash {
+  0% { border-color: var(--semantic); background: rgba(167,139,250,.16); }
+  100% { border-color: var(--line); background: var(--ink-2); }
+}
+.mem-item.just-retrieved { animation: readflash 1.6s ease-out; }
+@keyframes readflash {
+  0% { border-color: var(--contextual); background: rgba(87,230,196,.14); }
+  100% { border-color: var(--line); background: var(--ink-2); }
+}
+.score-bar {
+  height: 3px; border-radius: 2px; background: var(--line);
+  margin-top: 5px; overflow: hidden;
+}
+.score-bar i { display: block; height: 100%; background: var(--contextual); }
+
+/* session budget bar */
+#budgetWrap {
+  padding: 6px 12px 9px;
+  flex: none;
+  border-top: 1px solid var(--line);
+}
+#budgetWrap .b-label {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 9.5px; color: var(--faint);
+  margin-bottom: 4px;
+}
+#budgetBar { height: 5px; background: var(--ink); border-radius: 3px; overflow: hidden; }
+#budgetBar i { display: block; height: 100%; width: 0%; background: var(--session); transition: width .4s; }
+
+/* ---------- Activity log ---------- */
+#logbar {
+  border-top: 1px solid var(--line);
+  background: var(--ink-2);
+  height: 118px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+#logbar .log-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 18px 4px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--faint);
+}
+#logbar .log-head i { width: 6px; height: 6px; border-radius: 50%; background: var(--write); display: inline-block; }
+#logScroll {
+  overflow-y: auto; padding: 0 18px 8px;
+  font-family: var(--mono); font-size: 11px; line-height: 1.75;
+}
+.log-line { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log-line b { font-weight: 600; }
+.log-line .t { color: var(--faint); }
+.log-line.op-write b { color: var(--write); }
+.log-line.op-update b { color: var(--semantic); }
+.log-line.op-read b { color: var(--contextual); }
+.log-line.op-info b { color: var(--session); }
+.log-line.op-error b { color: var(--danger); }
+.log-line a { color: inherit; text-decoration: underline dotted; cursor: pointer; }
+
+/* ---------- Packets (the memory bus) ---------- */
+.packet {
+  position: fixed;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 400;
+}
+
+/* ---------- Modal / drawer ---------- */
+#overlay {
+  position: fixed; inset: 0;
+  background: rgba(5,9,14,.62);
+  backdrop-filter: blur(2px);
+  z-index: 500;
+  display: none;
+}
+#overlay.open { display: block; }
+#drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(480px, 94vw);
+  background: var(--ink-2);
+  border-left: 1px solid var(--line);
+  z-index: 501;
+  transform: translateX(102%);
+  transition: transform .28s cubic-bezier(.2,.8,.2,1);
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+#drawer.open { transform: translateX(0); }
+#drawer .d-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+#drawer .d-head h3 { font-family: var(--display); font-size: 16px; font-weight: 600; }
+#drawer .d-head .closeX {
+  margin-left: auto; background: transparent; border: 1px solid var(--line);
+  color: var(--muted); border-radius: 6px; width: 28px; height: 28px;
+  font-size: 14px;
+}
+#drawer .d-head .closeX:hover { color: var(--text); }
+#drawer .d-body { overflow-y: auto; padding: 16px 18px 28px; min-height: 0; }
+.d-section { margin-bottom: 18px; }
+.d-section h4 {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--faint); margin-bottom: 6px;
+}
+.d-section p { font-size: 13.5px; color: var(--text); }
+.d-section p.dim { color: var(--muted); }
+.d-quote {
+  border-left: 3px solid var(--line);
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--ink);
+  border-radius: 0 6px 6px 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.d-kv {
+  display: grid; grid-template-columns: auto 1fr; gap: 3px 14px;
+  font-family: var(--mono); font-size: 11px;
+}
+.d-kv .k { color: var(--faint); }
+.d-kv .v { color: var(--text); word-break: break-word; }
+.d-history-item {
+  border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px;
+  margin-bottom: 6px; font-size: 12.5px;
+}
+.d-history-item .h-when { font-family: var(--mono); font-size: 9.5px; color: var(--faint); }
+pre.promptdump {
+  background: var(--ink); border: 1px solid var(--line); border-radius: 8px;
+  padding: 12px; font-family: var(--mono); font-size: 11px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; color: var(--muted);
+  max-width: 100%; overflow-x: auto;
+}
+.pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* welcome hero inside chat */
+.hero {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  background:
+    radial-gradient(600px 200px at 20% 0%, rgba(87,230,196,.07), transparent),
+    radial-gradient(500px 220px at 90% 100%, rgba(167,139,250,.08), transparent),
+    var(--panel);
+}
+.hero h1 {
+  font-family: var(--display);
+  font-size: 22px; font-weight: 700; line-height: 1.2;
+  margin-bottom: 8px;
+}
+.hero h1 em { font-style: normal; color: var(--contextual); }
+.hero p { color: var(--muted); font-size: 13.5px; margin-bottom: 10px; }
+.hero .try {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.hero .try button {
+  background: var(--ink); border: 1px solid var(--line); color: var(--muted);
+  border-radius: 999px; padding: 5px 12px; font-size: 12px;
+}
+.hero .try button:hover { color: var(--text); border-color: var(--contextual); }
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+@media (max-width: 1020px) {
+  body { overflow: auto; }
+  #app { height: auto; }
+  #main { grid-template-columns: 1fr; }
+  #chatCol { grid-template-rows: auto auto auto; }
+  #chatScroll { height: 55vh; }
+  #memCol {
+    grid-template-columns: 1fr;
+    grid-template-areas: "session" "episodic" "semantic" "contextual";
+    grid-template-rows: auto minmax(200px,auto) minmax(200px,auto) minmax(200px,auto);
+  }
+  .mem-panel { max-height: 320px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header id="topbar">
+    <div class="brand">
+      <span class="dot-row"><i></i><i></i><i></i><i></i></span>
+      Memory Glassbox
+      <small>agentic memory, made visible</small>
+    </div>
+    <div class="spacer"></div>
+    <div class="ctl">
+      <span>mode</span>
+      <span class="mode-pill">
+        <button id="modeDemo" class="on" title="Simulated model. No key needed. Memory pipeline is fully real.">demo</button>
+        <button id="modeLive" title="Real LLM via OpenRouter. Paste your key.">live</button>
+      </span>
+    </div>
+    <div class="ctl" id="liveCtls" style="display:none">
+      <input type="password" id="apiKey" placeholder="sk-or-v1-..." size="18" title="OpenRouter API key. Stored only in this browser's localStorage.">
+      <select id="modelSel" title="Model to use via OpenRouter. If it is rate-limited, the app automatically falls back to the other free models.">
+        <option value="nvidia/nemotron-3-super-120b-a12b:free">nemotron-3-super (free)</option>
+        <option value="google/gemma-4-31b-it:free">gemma-4-31b (free)</option>
+        <option value="qwen/qwen3-next-80b-a3b-instruct:free">qwen3-next-80b (free)</option>
+        <option value="openai/gpt-oss-120b:free">gpt-oss-120b (free)</option>
+        <option value="meta-llama/llama-3.3-70b-instruct:free">llama-3.3-70b (free)</option>
+        <option value="__custom">custom model id...</option>
+      </select>
+      <input type="text" id="modelCustom" placeholder="vendor/model-id" size="16" style="display:none">
+    </div>
+    <button class="tbtn" id="xrayBtn" title="See the exact prompt sent to the model on the last turn">prompt x-ray</button>
+    <button class="tbtn" id="endSessionBtn" title="Consolidate: summarize this session into episodic memory, then clear working memory">end session</button>
+    <button class="tbtn danger" id="wipeBtn" title="Erase every stored memory">wipe all</button>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ CHAT ============ -->
+    <section id="chatCol">
+      <div id="chatScroll">
+        <div class="hero" id="hero">
+          <h1>Talk to an agent whose memory is a <em>glass box</em>.</h1>
+          <p>
+            Every message you send is traced through a real memory pipeline:
+            it enters working memory, triggers retrieval, gets answered, and is then
+            mined for facts, preferences and skills. Watch the panels on the right
+            light up as it happens. Click any stored memory to see exactly why and
+            how it was written.
+          </p>
+          <div class="try">
+            <button data-fill="Hi! My name is Manish and I work as a data engineer at UsefulBI.">"My name is Manish, I'm a data engineer..."</button>
+            <button data-fill="I prefer short answers with bullet points, and I love dark roast coffee.">"I prefer short answers..."</button>
+            <button data-fill="I'm learning Rust these days. Can you suggest a small project?">"I'm learning Rust..."</button>
+            <button data-fill="What do you remember about me so far?">"What do you remember about me?"</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="pipeline" title="The five stages every message goes through">
+        <div class="stage" data-stage="receive">
+          <span class="s-name"><i></i>1 · Receive</span>
+          <span class="s-note"></span>
+        </div>
+        <div class="stage" data-stage="retrieve">
+          <span class="s-name"><i></i>2 · Retrieve</span>
+          <span class="s-note"></span>
+        </div>
+        <div class="stage" data-stage="generate">
+          <span class="s-name"><i></i>3 · Generate</span>
+          <span class="s-note"></span>
+        </div>
+        <div class="stage" data-stage="extract">
+          <span class="s-name"><i></i>4 · Extract</span>
+          <span class="s-note"></span>
+        </div>
+        <div class="stage" data-stage="write">
+          <span class="s-name"><i></i>5 · Write</span>
+          <span class="s-note"></span>
+        </div>
+      </div>
+
+      <div id="composer">
+        <textarea id="input" placeholder="Say something the agent should remember... (Enter to send, Shift+Enter for newline)"></textarea>
+        <button id="sendBtn">Send</button>
+      </div>
+    </section>
+
+    <!-- ============ MEMORY ============ -->
+    <section id="memCol">
+
+      <div class="mem-panel" data-type="session">
+        <div class="mem-head">
+          <span class="swatch" style="background:var(--session)"></span>
+          <h2>Session memory</h2>
+          <span class="sub">working memory · the context window · volatile</span>
+          <span class="count" id="count-session">0</span>
+          <button class="whatis" data-explain="session" title="What is session memory?">?</button>
+        </div>
+        <div class="mem-body" id="body-session">
+          <div class="empty-note">Empty. Your next message lands here first: raw, verbatim, short-lived.</div>
+        </div>
+        <div id="budgetWrap">
+          <div class="b-label"><span>context window fill (what gets re-sent every turn)</span><span id="budgetText">0 / 6,000 tokens</span></div>
+          <div id="budgetBar"><i></i></div>
+        </div>
+      </div>
+
+      <div class="mem-panel" data-type="episodic">
+        <div class="mem-head">
+          <span class="swatch" style="background:var(--episodic)"></span>
+          <h2>Episodic memory</h2>
+          <span class="sub">a diary of events · what happened, when</span>
+          <span class="count" id="count-episodic">0</span>
+          <button class="whatis" data-explain="episodic" title="What is episodic memory?">?</button>
+        </div>
+        <div class="mem-body" id="body-episodic">
+          <div class="empty-note">No episodes yet. Each exchange is journaled here as a time-stamped event.</div>
+        </div>
+      </div>
+
+      <div class="mem-panel" data-type="semantic">
+        <div class="mem-head">
+          <span class="swatch" style="background:var(--semantic)"></span>
+          <h2>Semantic memory</h2>
+          <span class="sub">distilled knowledge · facts, preferences, skills</span>
+          <span class="count" id="count-semantic">0</span>
+          <button class="whatis" data-explain="semantic" title="What is semantic memory?">?</button>
+        </div>
+        <div class="mem-body" id="body-semantic">
+          <div class="empty-note">Nothing learned yet. Tell the agent about yourself and watch facts crystallize here.</div>
+        </div>
+      </div>
+
+      <div class="mem-panel" data-type="contextual">
+        <div class="mem-head">
+          <span class="swatch" style="background:var(--contextual)"></span>
+          <h2>Contextual memory</h2>
+          <span class="sub">the retrieval spotlight · what was recalled for the last message, and why</span>
+          <span class="count" id="count-contextual">0</span>
+          <button class="whatis" data-explain="contextual" title="What is contextual memory?">?</button>
+        </div>
+        <div class="mem-body" id="body-contextual">
+          <div class="empty-note">Nothing retrieved yet. When you send a message, the agent searches its long-term stores and the winners appear here with their relevance scores.</div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ============ ACTIVITY LOG ============ -->
+  <footer id="logbar">
+    <div class="log-head"><i></i> memory bus · every read and write, as it happens</div>
+    <div id="logScroll"></div>
+  </footer>
+</div>
+
+<div id="overlay"></div>
+<aside id="drawer" aria-modal="true" role="dialog">
+  <div class="d-head">
+    <h3 id="drawerTitle">Memory</h3>
+    <button class="closeX" id="drawerClose" title="Close">✕</button>
+  </div>
+  <div class="d-body" id="drawerBody"></div>
+</aside>
+
+<script>
+"use strict";
+/* =====================================================================
+   Memory Glassbox
+   A transparent agentic memory system. Four stores:
+   - session   : working memory (the context window), volatile
+   - episodic  : time-stamped diary of exchanges
+   - semantic  : extracted facts / preferences / skills
+   - contextual: derived view - what retrieval selected for the last turn
+   ===================================================================== */
+
+const STORE_KEY = "glassbox.memory.v1";
+const SETTINGS_KEY = "glassbox.settings.v1";
+const TOKEN_BUDGET = 6000;
+const RETRIEVE_TOP_K = 4;
+
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const now = () => Date.now();
+const uid = (p) => p + "-" + now().toString(36) + "-" + Math.random().toString(36).slice(2,7);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtTime = ts => new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+const fmtFull = ts => new Date(ts).toLocaleString();
+const estTokens = t => Math.max(1, Math.ceil((t||"").length / 4));
+
+/* ------------------------------ state ------------------------------ */
+let M = {                 // long-term + session state (persisted)
+  session: [],            // {id, role, content, at, tokens}
+  episodic: [],           // memory items, kind: 'episode'
+  semantic: [],           // memory items, kind: 'fact'|'preference'|'skill'
+  sessionStartedAt: null,
+};
+let contextual = [];      // derived: [{item, score, matched:[...]}] for last turn
+let lastPrompt = null;    // exact messages array sent to the model on last turn
+let lastExtractRaw = null;
+let busy = false;
+
+let S = {                 // settings (persisted separately)
+  mode: "demo",
+  apiKey: "",
+  model: "nvidia/nemotron-3-super-120b-a12b:free",
+};
+// Free models rate-limit often; when the chosen one 429s, fall through this chain.
+const FALLBACK_MODELS = [
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-4-31b-it:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  "openai/gpt-oss-120b:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+];
+
+function persist() { localStorage.setItem(STORE_KEY, JSON.stringify(M)); }
+function persistSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(S)); }
+function load() {
+  try { const raw = localStorage.getItem(STORE_KEY); if (raw) M = Object.assign(M, JSON.parse(raw)); } catch(e) {}
+  try { const raw = localStorage.getItem(SETTINGS_KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch(e) {}
+}
+
+/* --------------------------- memory items --------------------------- */
+function makeItem(type, kind, content, reason, source) {
+  return {
+    id: uid(type.slice(0,2)),
+    type, kind, content, reason,
+    source,                       // the user message (or summary) it came from
+    createdAt: now(), updatedAt: now(),
+    retrievals: [],               // {at, query, score, matched}
+    history: [],                  // {at, prev, why}
+    importance: 0.5,
+  };
+}
+
+/* --------------------------- retrieval ------------------------------ */
+const STOP = new Set(("a an and are as at be but by for from has have i im i'm in is it its me my of on or so that the this to was we what when where which who why will with you your yours do does did dont don't can could would should about tell me please hey hi hello").split(" "));
+function tokenize(text) {
+  return (text.toLowerCase().match(/[a-z0-9']+/g) || []).filter(w => w.length > 1 && !STOP.has(w));
+}
+function scoreItem(queryTokens, item) {
+  const itemTokens = new Set(tokenize(item.content + " " + (item.kind||"")));
+  const matched = [...new Set(queryTokens)].filter(t => itemTokens.has(t));
+  if (!matched.length && !queryTokens.length) return {score: 0, matched: []};
+  let score = matched.length / Math.sqrt(Math.max(4, itemTokens.size));
+  // recency boost: memories touched in the last 10 minutes get a nudge
+  const ageMin = (now() - item.updatedAt) / 60000;
+  if (ageMin < 10) score += 0.08;
+  // reinforcement: frequently retrieved memories are "stronger"
+  score += Math.min(0.15, item.retrievals.length * 0.03);
+  score += (item.importance - 0.5) * 0.1;
+  return {score: Math.round(score * 100) / 100, matched};
+}
+function isRecallQuery(text) {
+  return /\b(remember|know about me|recall|memory|memories|forgot|forget)\b/i.test(text);
+}
+function retrieve(query) {
+  const qt = tokenize(query);
+  const pool = [...M.semantic, ...M.episodic];
+  const recall = isRecallQuery(query);
+  const scored = pool.map(item => {
+    const {score, matched} = scoreItem(qt, item);
+    // a "what do you remember" question should surface everything semantic
+    const boosted = recall && item.type === "semantic" ? score + 0.5 : score;
+    return {item, score: Math.round(boosted*100)/100, matched};
+  }).filter(x => x.score > 0.05);
+  scored.sort((a,b) => b.score - a.score);
+  return scored.slice(0, recall ? 8 : RETRIEVE_TOP_K);
+}
+
+/* ------------------------- demo-mode brain -------------------------- */
+/* Rule-based extraction so the whole pipeline works with zero setup.
+   Live mode replaces generation + extraction with real LLM calls;
+   storage, retrieval and provenance are identical in both modes. */
+function demoExtract(userMsg) {
+  const out = [];
+  const push = (kind, content, reason) => out.push({action:"add", kind, content, reason});
+  let m;
+  if ((m = userMsg.match(/(?:my name is|i am called|call me|i'm)\s+([A-Z][a-z]+)(?!\w)/i)) && m[1].length > 1)
+    push("fact", `User's name is ${m[1]}.`, `The message contains an explicit self-introduction pattern ("my name is / call me"), which is a stable identity fact worth keeping across sessions.`);
+  if ((m = userMsg.match(/i (?:work|am working) (?:as|at|in|on)\s+([^.,!?\n]+)/i)))
+    push("fact", `User works ${userMsg.match(/i (?:work|am working) ((?:as|at|in|on)\s+[^.,!?\n]+)/i)[1].trim()}.`, `Occupation statements ("I work as/at...") describe durable personal context that helps tailor future answers.`);
+  if ((m = userMsg.match(/i (prefer|like|love|enjoy|hate|dislike)\s+([^.!?\n]+?)(?=\s+(?:and|but|because)\s+i\b|[.!?\n]|$)/i))) {
+    const verb3 = {prefer:"prefers", like:"likes", love:"loves", enjoy:"enjoys", hate:"hates", dislike:"dislikes"}[m[1].toLowerCase()];
+    push("preference", `User ${verb3} ${m[2].trim()}.`, `First-person preference verbs ("prefer / like / love / hate") signal a taste or working style the agent should respect in every future reply.`);
+  }
+  if ((m = userMsg.match(/i (?:am learning|am studying|want to learn)\s+([^.,!?\n]+?)(?=\s+(?:and|but|because)\s+i\b|[.,!?\n]|$)/i)))
+    push("skill", `User is learning ${m[1].trim()}.`, `Learning statements describe an evolving skill. Tracking it lets the agent pitch explanations at the right level and follow progress over time.`);
+  if ((m = userMsg.match(/i (know|can|use|am good at|am experienced (?:in|with))\s+([^.,!?\n]+?)(?=\s+(?:and|but|because)\s+i\b|[.,!?\n]|$)/i))) {
+    const v = m[1].toLowerCase();
+    const verb3 = v === "know" ? "knows" : v === "use" ? "uses" : v === "can" ? "can" : v.replace(/^am /, "is ");
+    push("skill", `User ${verb3} ${m[2].trim()}.`, `Capability statements ("I know / I can / I use") define the user's skill set, so answers can skip basics they already master.`);
+  }
+  if ((m = userMsg.match(/i (?:live|am based|am located) (?:in|at|near)\s+([^.,!?\n]+)/i)))
+    push("fact", `User lives ${userMsg.match(/(?:in|at|near)\s+[^.,!?\n]+/i)[0].trim()}.`, `Location is stable personal context, useful for timezone, locale and region-specific answers.`);
+  // dedupe against existing semantic memory (demo-grade similarity)
+  return out.filter(c => {
+    const ct = new Set(tokenize(c.content));
+    return !M.semantic.some(ex => {
+      const et = tokenize(ex.content);
+      const overlap = et.filter(t => ct.has(t)).length;
+      return overlap >= Math.min(ct.size, et.length) * 0.8;
+    });
+  });
+}
+function demoReply(userMsg, retrieved) {
+  const sem = retrieved.filter(r => r.item.type === "semantic");
+  if (isRecallQuery(userMsg)) {
+    if (!sem.length) return "Honestly? Nothing yet. My semantic store is empty, so I have no facts, preferences or skills on file about you. Tell me something about yourself and watch the violet panel on the right.";
+    const lines = sem.map(r => `- ${r.item.content} (${r.item.kind}, stored ${fmtTime(r.item.createdAt)}, retrieved ${r.item.retrievals.length + 1}x)`);
+    return `Here is literally everything my retrieval step just pulled from long-term memory:\n\n${lines.join("\n")}\n\nEach of those was scored against your question - the teal panel shows the scores. Click any item to see why it was stored.`;
+  }
+  let openers = ["Got it.", "Noted.", "Interesting.", "Nice."];
+  let reply = openers[Math.floor(Math.random()*openers.length)] + " ";
+  if (sem.length) {
+    reply += `Since I remember that ${sem[0].item.content.replace(/^User(?:'s)?\s*/i, "you ").replace(/\.$/, "")}, I'm keeping that in mind. `;
+  }
+  reply += "I'm a simulated model in demo mode, so my conversation is shallow - but the memory machinery around me is fully real. ";
+  reply += "Check the pipeline strip below your message: what you just said was scanned for facts, preferences and skills, and anything extracted is being written to the stores on the right.";
+  return reply;
+}
+
+/* --------------------------- live LLM calls -------------------------- */
+async function callOpenRouter(messages, opts = {}) {
+  const chain = [S.model, ...FALLBACK_MODELS.filter(m => m !== S.model)];
+  let lastErr;
+  for (const model of chain) {
+    try {
+      const text = await callModelOnce(model, messages, opts);
+      if (model !== chain[0]) logEvent("info", `answered by fallback model ${esc(model.split("/").pop())}`);
+      return text;
+    } catch (err) {
+      lastErr = err;
+      if (!/429|rate.?limit|404|No endpoints|unavailable|temporarily|empty response/i.test(err.message)) throw err;
+      logEvent("info", `${esc(model.split("/").pop())} unavailable, trying next free model...`);
+    }
+  }
+  throw new Error(`All ${chain.length} free models are busy right now. Last error: ${lastErr.message}`);
+}
+async function callModelOnce(model, messages, {json=false, maxTokens=700} = {}) {
+  const body = { model, messages, temperature: json ? 0.1 : 0.7, max_tokens: maxTokens };
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${S.apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://local.memory-glassbox",
+      "X-Title": "Memory Glassbox",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let detail = "";
+    try { detail = (await res.json()).error?.message || ""; } catch(e) {}
+    throw new Error(`OpenRouter ${res.status}: ${detail || res.statusText}`);
+  }
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content ?? "";
+  if (!text) throw new Error("Model returned an empty response.");
+  return text;
+}
+
+function buildChatMessages(userMsg, retrieved) {
+  const memLines = retrieved.map(r =>
+    `- [${r.item.type}/${r.item.kind}] ${r.item.content} (relevance ${r.score})`);
+  const system = [
+    "You are the conversational core of 'Memory Glassbox', a teaching tool that makes agentic memory visible.",
+    "Answer the user naturally and concisely (2-6 sentences).",
+    "You have real long-term memory. The items below were retrieved for this message; use them when relevant and feel free to reference that you remember them.",
+    "",
+    memLines.length ? "RETRIEVED MEMORIES:\n" + memLines.join("\n") : "RETRIEVED MEMORIES: (none - your long-term store had nothing relevant)",
+  ].join("\n");
+  const turns = M.session.slice(-12).map(t => ({role: t.role === "agent" ? "assistant" : "user", content: t.content}));
+  return [{role:"system", content: system}, ...turns, {role:"user", content: userMsg}];
+}
+
+function buildExtractMessages(userMsg, reply) {
+  const existing = M.semantic.map(s => `${s.id} | ${s.kind} | ${s.content}`).join("\n") || "(none)";
+  const system = [
+    "You are the memory-extraction module of an agentic memory system.",
+    "Given the user's latest message, decide what deserves to be written to long-term SEMANTIC memory.",
+    "Extract only stable, reusable knowledge about the user: facts (identity, job, location), preferences (tastes, working style, likes/dislikes), skills (what they know, use, or are learning).",
+    "Do NOT store small talk, questions, or one-off requests.",
+    "If a new statement contradicts or refines an existing memory, return an update for that memory id instead of adding a duplicate.",
+    "",
+    "EXISTING SEMANTIC MEMORIES:",
+    existing,
+    "",
+    'Respond with ONLY valid JSON, no prose, in this exact shape:',
+    '{"items":[{"action":"add"|"update","id":"(only for update)","kind":"fact"|"preference"|"skill","content":"third-person statement about the user","reason":"one sentence: why this is worth remembering"}],',
+    ' "episode":{"summary":"one sentence describing this exchange as an event","importance":0.0}}',
+    'If nothing is worth storing, return {"items":[],"episode":{...}} - the episode is always required.',
+  ].join("\n");
+  return [
+    {role:"system", content: system},
+    {role:"user", content: `USER MESSAGE:\n${userMsg}\n\nASSISTANT REPLY:\n${reply}`},
+  ];
+}
+
+async function extractLive(userMsg, reply) {
+  // Free endpoints sometimes return prose or garbage instead of JSON, so a
+  // parse failure is treated like a model failure: move on down the chain.
+  const chain = [S.model, ...FALLBACK_MODELS.filter(m => m !== S.model)];
+  let lastErr;
+  for (const model of chain) {
+    try {
+      const raw = await callModelOnce(model, buildExtractMessages(userMsg, reply), {json: true, maxTokens: 900});
+      return parseExtraction(raw);
+    } catch (err) {
+      lastErr = err;
+      logEvent("info", `extract via ${esc(model.split("/").pop())} failed (${esc(err.message.slice(0,50))}), trying next model...`);
+    }
+  }
+  throw lastErr;
+}
+
+function parseExtraction(text) {
+  lastExtractRaw = text;
+  let t = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim()
+    .replace(/^```(?:json)?/m, "").replace(/```\s*$/m, "").trim();
+  const start = t.indexOf("{");
+  const end = t.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("no JSON found");
+  const obj = JSON.parse(t.slice(start, end + 1));
+  if (!Array.isArray(obj.items)) obj.items = [];
+  return obj;
+}
+
+/* ----------------------------- rendering ----------------------------- */
+function kindClass(k) { return ({fact:"fact", preference:"preference", skill:"skill", episode:"episode"})[k] || "fact"; }
+
+function renderSession() {
+  const body = $("#body-session");
+  if (!M.session.length) {
+    body.innerHTML = `<div class="empty-note">Empty. Your next message lands here first: raw, verbatim, short-lived.</div>`;
+  } else {
+    body.innerHTML = M.session.map(t => `
+      <div class="mem-item" data-open="session:${t.id}">
+        <div class="mi-top">
+          <span class="kind ${t.role === "user" ? "turn-user" : "turn-agent"}">${t.role === "user" ? "you" : "agent"}</span>
+          <span class="mi-when">${fmtTime(t.at)} · ~${t.tokens} tok</span>
+        </div>
+        <div class="mi-content">${esc(t.content.length > 140 ? t.content.slice(0,140) + "…" : t.content)}</div>
+      </div>`).join("");
+  }
+  $("#count-session").textContent = M.session.length;
+  const used = M.session.reduce((a,t) => a + t.tokens, 0);
+  const pct = Math.min(100, used / TOKEN_BUDGET * 100);
+  $("#budgetBar i").style.width = pct + "%";
+  $("#budgetBar i").style.background = pct > 85 ? "var(--danger)" : "var(--session)";
+  $("#budgetText").textContent = `${used.toLocaleString()} / ${TOKEN_BUDGET.toLocaleString()} tokens`;
+  body.scrollTop = body.scrollHeight;
+}
+
+function itemCard(item, extra="") {
+  return `
+    <div class="mem-item" data-open="item:${item.id}" id="card-${item.id}">
+      <div class="mi-top">
+        <span class="kind ${kindClass(item.kind)}">${item.kind}</span>
+        <span class="mi-when">${fmtTime(item.updatedAt)}</span>
+      </div>
+      <div class="mi-content">${esc(item.content)}</div>
+      <div class="mi-foot">
+        <span>recalled ${item.retrievals.length}x</span>
+        ${item.history.length ? `<span>updated ${item.history.length}x</span>` : ""}
+      </div>
+      ${extra}
+    </div>`;
+}
+
+function renderEpisodic() {
+  const body = $("#body-episodic");
+  const items = [...M.episodic].sort((a,b) => b.updatedAt - a.updatedAt);
+  body.innerHTML = items.length
+    ? items.map(i => itemCard(i)).join("")
+    : `<div class="empty-note">No episodes yet. Each exchange is journaled here as a time-stamped event.</div>`;
+  $("#count-episodic").textContent = M.episodic.length;
+}
+
+function renderSemantic() {
+  const body = $("#body-semantic");
+  const order = {fact:0, preference:1, skill:2};
+  const items = [...M.semantic].sort((a,b) => (order[a.kind]-order[b.kind]) || b.updatedAt - a.updatedAt);
+  body.innerHTML = items.length
+    ? items.map(i => itemCard(i)).join("")
+    : `<div class="empty-note">Nothing learned yet. Tell the agent about yourself and watch facts crystallize here.</div>`;
+  $("#count-semantic").textContent = M.semantic.length;
+}
+
+function renderContextual() {
+  const body = $("#body-contextual");
+  body.innerHTML = contextual.length
+    ? contextual.map(r => `
+      <div class="mem-item" data-open="item:${r.item.id}">
+        <div class="mi-top">
+          <span class="kind ${kindClass(r.item.kind)}">${r.item.kind}</span>
+          <span class="mi-when">score ${r.score}</span>
+        </div>
+        <div class="mi-content">${esc(r.item.content)}</div>
+        <div class="mi-foot">
+          <span>from ${r.item.type} memory</span>
+          ${r.matched.length ? `<span>matched: ${esc(r.matched.slice(0,5).join(", "))}</span>` : `<span>recall-all boost</span>`}
+        </div>
+        <div class="score-bar"><i style="width:${Math.min(100, r.score*100)}%"></i></div>
+      </div>`).join("")
+    : `<div class="empty-note">Nothing retrieved yet. When you send a message, the agent searches its long-term stores and the winners appear here with their relevance scores.</div>`;
+  $("#count-contextual").textContent = contextual.length;
+}
+
+function renderAll() { renderSession(); renderEpisodic(); renderSemantic(); renderContextual(); }
+
+/* ------------------------------- log -------------------------------- */
+function logEvent(op, html) {
+  const line = document.createElement("div");
+  line.className = `log-line op-${op}`;
+  line.innerHTML = `<span class="t">${fmtTime(now())}</span> <b>${op.toUpperCase().padEnd(6," ")}</b> ${html}`;
+  const scroll = $("#logScroll");
+  scroll.appendChild(line);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+/* ----------------------------- pipeline ------------------------------ */
+function setStage(name, note) {
+  $$("#pipeline .stage").forEach(s => {
+    if (s.dataset.stage === name) { s.classList.add("active"); s.classList.remove("done"); if (note !== undefined) $(".s-note", s).textContent = note; }
+    else if (s.classList.contains("active")) { s.classList.remove("active"); s.classList.add("done"); }
+  });
+}
+function stageNote(name, note) {
+  const s = $(`#pipeline .stage[data-stage="${name}"]`);
+  if (s) $(".s-note", s).textContent = note;
+}
+function resetStages() {
+  $$("#pipeline .stage").forEach(s => { s.classList.remove("active","done"); $(".s-note", s).textContent = ""; });
+}
+
+/* --------------------------- packet animation ------------------------ */
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function firePackets(fromEl, toEl, color, count=3) {
+  if (REDUCED || !fromEl || !toEl) return;
+  const f = fromEl.getBoundingClientRect();
+  const t = toEl.getBoundingClientRect();
+  const x1 = f.left + f.width/2, y1 = f.top + f.height/2;
+  const x2 = t.left + t.width/2, y2 = t.top + Math.min(30, t.height/2);
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement("div");
+    p.className = "packet";
+    p.style.background = color;
+    p.style.boxShadow = `0 0 12px ${color}`;
+    p.style.left = x1 + "px";
+    p.style.top = y1 + "px";
+    document.body.appendChild(p);
+    const midX = (x1+x2)/2 + (Math.random()*80 - 40);
+    const midY = Math.min(y1,y2) - 40 - Math.random()*50;
+    p.animate([
+      { transform: "translate(0,0) scale(0.7)", opacity: 0.2 },
+      { transform: `translate(${midX-x1}px, ${midY-y1}px) scale(1.15)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(${x2-x1}px, ${y2-y1}px) scale(0.6)`, opacity: 0.1 },
+    ], { duration: 700 + i*130, delay: i*90, easing: "cubic-bezier(.3,.1,.3,1)" })
+     .onfinish = () => p.remove();
+  }
+}
+function flashPanel(type) {
+  const panel = $(`.mem-panel[data-type="${type}"]`);
+  if (!panel) return;
+  panel.classList.add(`flash-${type}`);
+  setTimeout(() => panel.classList.remove(`flash-${type}`), 1400);
+}
+function flashCard(id, cls) {
+  const el = $(`#card-${id}`) || $(`[data-open="item:${id}"]`);
+  if (el) { el.classList.add(cls); setTimeout(() => el.classList.remove(cls), 1700); }
+}
+
+/* ------------------------------ chat UI ------------------------------ */
+function addChatMsg(role, content, chips=[]) {
+  const wrap = document.createElement("div");
+  wrap.className = `msg ${role}`;
+  const chipHtml = chips.map(c =>
+    `<span class="chip w-${c.type}" data-open="${c.open || ""}" title="${esc(c.title || "")}">${esc(c.label)}</span>`).join("");
+  wrap.innerHTML = `
+    <div class="who">${role === "user" ? "you" : role === "agent" ? "agent" : "system"}</div>
+    <div class="bubble">${esc(content)}</div>
+    ${chipHtml ? `<div class="meta-chips">${chipHtml}</div>` : ""}`;
+  $("#chatScroll").appendChild(wrap);
+  $("#chatScroll").scrollTop = $("#chatScroll").scrollHeight;
+  return wrap;
+}
+function addChipsTo(msgEl, chips) {
+  let row = $(".meta-chips", msgEl);
+  if (!row) { row = document.createElement("div"); row.className = "meta-chips"; msgEl.appendChild(row); }
+  chips.forEach(c => {
+    const span = document.createElement("span");
+    span.className = `chip w-${c.type}`;
+    span.dataset.open = c.open || "";
+    span.title = c.title || "";
+    span.textContent = c.label;
+    row.appendChild(span);
+  });
+}
+
+/* --------------------------- write handling -------------------------- */
+function applyExtraction(result, sourceMsg, userMsgEl) {
+  const written = [];
+  const chatPanel = $("#chatScroll");
+  // semantic items
+  for (const it of (result.items || [])) {
+    if (!it || !it.content || !["fact","preference","skill"].includes(it.kind)) continue;
+    if (it.action === "update" && it.id) {
+      const existing = M.semantic.find(s => s.id === it.id);
+      if (existing) {
+        existing.history.push({at: now(), prev: existing.content, why: it.reason || "refined by a newer statement"});
+        existing.content = it.content;
+        existing.reason = it.reason || existing.reason;
+        existing.updatedAt = now();
+        existing.source = sourceMsg;
+        written.push({item: existing, op: "update"});
+        continue;
+      }
+    }
+    const item = makeItem("semantic", it.kind, it.content, it.reason || "Extracted as stable knowledge about the user.", sourceMsg);
+    M.semantic.push(item);
+    written.push({item, op: "write"});
+  }
+  // episode
+  const ep = result.episode || {};
+  const epItem = makeItem("episodic", "episode",
+    ep.summary || `User said: "${sourceMsg.slice(0,90)}"`,
+    ep.reason || "Every exchange is journaled as an event so the agent can later recall what happened and when, even if no facts were extracted.",
+    sourceMsg);
+  epItem.importance = typeof ep.importance === "number" ? Math.max(0, Math.min(1, ep.importance)) : 0.5;
+  M.episodic.push(epItem);
+  written.push({item: epItem, op: "write"});
+
+  // render + animate + log + chips
+  renderSemantic(); renderEpisodic();
+  const chips = [];
+  for (const w of written) {
+    const t = w.item.type;
+    flashPanel(t);
+    firePackets(userMsgEl || chatPanel, $(`.mem-panel[data-type="${t}"]`), t === "episodic" ? "#ffb454" : "#a78bfa", 3);
+    flashCard(w.item.id, w.op === "update" ? "just-updated" : "just-written");
+    logEvent(w.op === "update" ? "update" : "write",
+      `${t}/${w.item.kind} <a data-open="item:${w.item.id}">${esc(w.item.content.slice(0,80))}</a>`);
+    chips.push({
+      type: t,
+      label: `${w.op === "update" ? "updated" : "stored"} → ${t}${w.item.kind !== "episode" ? " ("+w.item.kind+")" : ""}`,
+      open: `item:${w.item.id}`,
+      title: w.item.reason,
+    });
+  }
+  if (userMsgEl) addChipsTo(userMsgEl, chips);
+  persist();
+  return written;
+}
+
+/* ----------------------------- send flow ----------------------------- */
+async function handleSend() {
+  if (busy) return;
+  const input = $("#input");
+  const text = input.value.trim();
+  if (!text) return;
+  if (S.mode === "live" && !S.apiKey) {
+    logEvent("error", "Live mode needs an OpenRouter API key. Paste one in the top bar, or switch to demo mode.");
+    $("#apiKey").focus();
+    return;
+  }
+  busy = true;
+  $("#sendBtn").disabled = true;
+  input.value = "";
+  $("#hero")?.remove();
+  resetStages();
+
+  /* 1 · RECEIVE - into session (working) memory */
+  setStage("receive", "message enters working memory, verbatim");
+  const userMsgEl = addChatMsg("user", text);
+  const turn = {id: uid("t"), role: "user", content: text, at: now(), tokens: estTokens(text)};
+  if (!M.session.length) M.sessionStartedAt = now();
+  M.session.push(turn);
+  renderSession();
+  flashPanel("session");
+  firePackets(userMsgEl, $(`.mem-panel[data-type="session"]`), "#6fd3ff", 3);
+  logEvent("write", `session <a data-open="session:${turn.id}">user turn, ~${turn.tokens} tokens</a> - kept verbatim in the context window`);
+  addChipsTo(userMsgEl, [{type:"session", label:"→ session memory", open:`session:${turn.id}`, title:"Stored verbatim in the context window. Re-sent to the model on every turn until the session ends."}]);
+  persist();
+  await sleep(500);
+
+  /* 2 · RETRIEVE - search long-term stores */
+  setStage("retrieve", "scoring long-term memories against your message");
+  contextual = retrieve(text);
+  for (const r of contextual) {
+    r.item.retrievals.push({at: now(), query: text.slice(0,120), score: r.score, matched: r.matched});
+    firePackets($(`.mem-panel[data-type="${r.item.type}"]`), $(`.mem-panel[data-type="contextual"]`), "#57e6c4", 2);
+  }
+  renderContextual(); renderEpisodic(); renderSemantic();
+  contextual.forEach(r => flashCard(r.item.id, "just-retrieved"));
+  if (contextual.length) {
+    flashPanel("contextual");
+    stageNote("retrieve", `${contextual.length} memor${contextual.length===1?"y":"ies"} recalled`);
+    logEvent("read", `contextual - retrieved ${contextual.length} item(s), top score ${contextual[0].score}: <a data-open="item:${contextual[0].item.id}">${esc(contextual[0].item.content.slice(0,60))}</a>`);
+  } else {
+    stageNote("retrieve", "nothing relevant in long-term memory");
+    logEvent("read", "contextual - long-term stores searched, nothing scored above threshold");
+  }
+  persist();
+  await sleep(650);
+
+  /* 3 · GENERATE */
+  setStage("generate", S.mode === "live" ? `calling ${S.model.split("/").pop()}` : "demo model composing a reply");
+  lastPrompt = buildChatMessages(text, contextual);
+  let reply;
+  try {
+    if (S.mode === "live") {
+      reply = await callOpenRouter(lastPrompt);
+    } else {
+      await sleep(600);
+      reply = demoReply(text, contextual);
+    }
+  } catch (err) {
+    stageNote("generate", "model call failed");
+    logEvent("error", `generate: ${esc(err.message)}`);
+    addChatMsg("system-note", `The model call failed: ${err.message}\nCheck your API key / model in the top bar, or switch to demo mode. Your message is still in session memory.`);
+    busy = false; $("#sendBtn").disabled = false;
+    return;
+  }
+  const agentEl = addChatMsg("agent", reply);
+  const aTurn = {id: uid("t"), role: "agent", content: reply, at: now(), tokens: estTokens(reply)};
+  M.session.push(aTurn);
+  renderSession();
+  if (contextual.length) {
+    addChipsTo(agentEl, [{type:"contextual", label:`used ${contextual.length} retrieved memor${contextual.length===1?"y":"ies"}`, open:"xray", title:"These memories were injected into the prompt. Click to see the exact prompt."}]);
+  }
+  logEvent("write", `session - agent turn, ~${aTurn.tokens} tokens`);
+  persist();
+  await sleep(350);
+
+  /* 4 · EXTRACT */
+  setStage("extract", "mining the exchange for durable knowledge");
+  let extraction;
+  try {
+    if (S.mode === "live") {
+      extraction = await extractLive(text, reply);
+    } else {
+      await sleep(650);
+      extraction = {
+        items: demoExtract(text),
+        episode: {
+          summary: `User ${isRecallQuery(text) ? "asked what the agent remembers" : `said: "${text.slice(0,80)}${text.length>80?"…":""}"`} and the agent replied.`,
+          importance: 0.4,
+        },
+      };
+    }
+  } catch (err) {
+    logEvent("error", `extract: ${esc(err.message)} - falling back to heuristic extraction`);
+    extraction = {items: demoExtract(text), episode: {summary: `User said: "${text.slice(0,80)}"`, importance: 0.4}};
+  }
+  const semCount = (extraction.items || []).length;
+  stageNote("extract", semCount ? `${semCount} durable item(s) found` : "no durable knowledge in this message");
+  await sleep(450);
+
+  /* 5 · WRITE */
+  setStage("write", "committing to long-term stores");
+  const written = applyExtraction(extraction, text, userMsgEl);
+  stageNote("write", `${written.length} write(s): ${written.map(w => w.item.type + "/" + w.item.kind).join(", ")}`);
+  await sleep(500);
+  setStage("__done__");  // marks last stage done
+  $$("#pipeline .stage").forEach(s => s.classList.remove("active"));
+  $$("#pipeline .stage").forEach(s => s.classList.add("done"));
+
+  busy = false;
+  $("#sendBtn").disabled = false;
+  input.focus();
+}
+
+/* --------------------------- consolidation --------------------------- */
+function endSession() {
+  if (!M.session.length) { logEvent("info", "session is already empty - nothing to consolidate"); return; }
+  const userTurns = M.session.filter(t => t.role === "user").length;
+  const gist = M.session.filter(t => t.role === "user").map(t => t.content.slice(0,60)).slice(0,3).join(" / ");
+  const item = makeItem("episodic", "episode",
+    `Session with ${userTurns} user message(s), ${fmtTime(M.sessionStartedAt || now())}-${fmtTime(now())}. Topics: ${gist || "(empty)"}`,
+    "Session consolidation: when working memory is cleared, the whole conversation is compressed into one episodic summary. This mirrors how real agents survive context-window limits - the verbatim transcript is gone, but the gist of the event survives.",
+    "(whole session transcript)");
+  item.importance = 0.7;
+  M.episodic.push(item);
+  M.session = [];
+  M.sessionStartedAt = null;
+  contextual = [];
+  persist();
+  renderAll();
+  flashPanel("episodic");
+  flashCard(item.id, "just-written");
+  firePackets($(`.mem-panel[data-type="session"]`), $(`.mem-panel[data-type="episodic"]`), "#ffb454", 4);
+  logEvent("write", `episodic <a data-open="item:${item.id}">session consolidated into one episode</a>; working memory cleared`);
+  addChatMsg("system-note", "Session ended. Working memory was wiped, but first it was consolidated: one episodic summary of the whole conversation now lives in the amber panel. This is how agents survive context-window limits.");
+}
+
+/* ------------------------------ drawer ------------------------------- */
+const EXPLAIN = {
+  session: {
+    title: "Session memory (working memory)",
+    color: "var(--session)",
+    body: `
+      <div class="d-section"><h4>What it is</h4>
+        <p>The model's short-term attention: the context window. Every turn you see here is
+        re-sent to the LLM <b>verbatim, on every single request</b>. Nothing here is "learned" -
+        it is literally pasted into the prompt each time.</p></div>
+      <div class="d-section"><h4>Why it exists</h4>
+        <p class="dim">LLMs are stateless. Between two API calls the model remembers nothing.
+        The illusion of a continuous conversation is created by replaying this buffer.</p></div>
+      <div class="d-section"><h4>Its fatal flaw</h4>
+        <p class="dim">It is finite (watch the token bar fill) and volatile - close the session and
+        it is gone. That is exactly why the other three memory systems exist: they are the
+        agent's way of saving what matters before this buffer dies.</p></div>
+      <div class="d-section"><h4>Try it</h4>
+        <p class="dim">Press "end session" in the top bar and watch the buffer get compressed
+        into a single episodic memory before being wiped.</p></div>`,
+  },
+  episodic: {
+    title: "Episodic memory",
+    color: "var(--episodic)",
+    body: `
+      <div class="d-section"><h4>What it is</h4>
+        <p>A diary of <b>events</b>: time-stamped records of what happened in each exchange -
+        who said what, when, and how important it felt. Like your own memory of
+        "that conversation last Tuesday".</p></div>
+      <div class="d-section"><h4>How it gets written</h4>
+        <p class="dim">After every reply, the extraction stage summarizes the exchange into one
+        episode. When a session ends, the whole conversation is consolidated into a single
+        richer episode - that mirrors what happens in humans during sleep.</p></div>
+      <div class="d-section"><h4>How it gets read</h4>
+        <p class="dim">When a new message resembles a past event, retrieval pulls the episode into
+        contextual memory, so the agent can say "last time we talked about X...".</p></div>
+      <div class="d-section"><h4>Episodic vs semantic</h4>
+        <p class="dim">Episodic remembers <i>that Tuesday you mentioned Rust</i>.
+        Semantic remembers <i>you are learning Rust</i> - the event stripped away, only the
+        knowledge kept.</p></div>`,
+  },
+  semantic: {
+    title: "Semantic memory",
+    color: "var(--semantic)",
+    body: `
+      <div class="d-section"><h4>What it is</h4>
+        <p>Distilled knowledge about you: stable <b>facts</b> (name, job, location),
+        <b>preferences</b> (tastes, working style), and <b>skills</b> (what you know or are
+        learning). The original sentence is thrown away; only the meaning survives.</p></div>
+      <div class="d-section"><h4>How it gets written</h4>
+        <p class="dim">Stage 4 of the pipeline runs an extraction pass over every exchange asking:
+        "is there anything durable and reusable here?". Chit-chat is rejected; identity,
+        preference and capability statements are kept, each with a recorded reason.</p></div>
+      <div class="d-section"><h4>How it gets updated</h4>
+        <p class="dim">New statements that contradict or refine an old memory <b>update it in place</b>
+        instead of duplicating it - say "actually I prefer long answers now" and watch the
+        preference item change, keeping its full edit history.</p></div>
+      <div class="d-section"><h4>Why it matters</h4>
+        <p class="dim">This store is what makes an agent feel like it knows you across sessions.
+        It survives "end session" and even a browser restart (it lives in localStorage).</p></div>`,
+  },
+  contextual: {
+    title: "Contextual memory (retrieval)",
+    color: "var(--contextual)",
+    body: `
+      <div class="d-section"><h4>What it is</h4>
+        <p>Not a store - a <b>spotlight</b>. For every message you send, the agent searches its
+        episodic + semantic stores, scores every memory for relevance, and injects only the
+        winners into the prompt. This panel shows exactly what was recalled for the last
+        message, and why.</p></div>
+      <div class="d-section"><h4>How scoring works here</h4>
+        <p class="dim">This demo uses transparent lexical scoring: word overlap between your message
+        and each memory, normalized by memory length, plus a recency boost, a reinforcement
+        boost (often-recalled memories score higher), and an importance boost. Production
+        systems use embedding vectors instead - same idea, fuzzier matching.</p></div>
+      <div class="d-section"><h4>Why not inject everything?</h4>
+        <p class="dim">The context window is small and expensive (watch the blue token bar).
+        Retrieval is the art of spending those tokens only on memories that will actually
+        improve this specific answer.</p></div>
+      <div class="d-section"><h4>See it yourself</h4>
+        <p class="dim">Each retrieved card shows its score, which of your words matched, and glows
+        teal in its home panel at the moment of recall. Press "prompt x-ray" to see the
+        retrieved memories sitting inside the real prompt.</p></div>`,
+  },
+};
+
+function openDrawer(title, bodyHtml) {
+  $("#drawerTitle").textContent = title;
+  $("#drawerBody").innerHTML = bodyHtml;
+  $("#overlay").classList.add("open");
+  $("#drawer").classList.add("open");
+}
+function closeDrawer() {
+  $("#overlay").classList.remove("open");
+  $("#drawer").classList.remove("open");
+}
+
+function openItem(id) {
+  const item = [...M.semantic, ...M.episodic].find(i => i.id === id);
+  if (!item) return;
+  const typeName = item.type === "semantic" ? "Semantic" : "Episodic";
+  const historyHtml = item.history.length
+    ? item.history.map(h => `
+        <div class="d-history-item">
+          <div class="h-when">${fmtFull(h.at)} - ${esc(h.why)}</div>
+          <div>was: "${esc(h.prev)}"</div>
+        </div>`).join("")
+    : `<p class="dim">Never updated - still the original version.</p>`;
+  const retrievalsHtml = item.retrievals.length
+    ? item.retrievals.slice(-6).reverse().map(r => `
+        <div class="d-history-item">
+          <div class="h-when">${fmtFull(r.at)} · score ${r.score}${r.matched?.length ? " · matched: " + esc(r.matched.join(", ")) : ""}</div>
+          <div class="dim">query: "${esc(r.query)}"</div>
+        </div>`).join("")
+    : `<p class="dim">Never retrieved yet. It will surface when a future message resembles it.</p>`;
+  openDrawer(`${typeName} · ${item.kind}`, `
+    <div class="d-section"><h4>Stored memory</h4>
+      <p style="font-size:15px">${esc(item.content)}</p></div>
+    <div class="d-section"><h4>Why it was stored</h4>
+      <p>${esc(item.reason)}</p></div>
+    <div class="d-section"><h4>Source - the message it came from</h4>
+      <div class="d-quote">${esc(item.source)}</div></div>
+    <div class="d-section"><h4>How it was stored</h4>
+      <p class="dim">${item.type === "semantic"
+        ? "Pipeline stage 4 (Extract) analyzed the exchange and emitted this as a durable " + item.kind + ". Stage 5 (Write) committed it to the semantic store in this browser's localStorage, where it survives sessions and reloads."
+        : "Pipeline stage 5 (Write) journals every exchange as an event. Episodes keep the when and what of the conversation even when no facts were extracted."}</p></div>
+    <div class="d-section"><h4>Record</h4>
+      <div class="d-kv">
+        <span class="k">id</span><span class="v">${item.id}</span>
+        <span class="k">type</span><span class="v">${item.type} / ${item.kind}</span>
+        <span class="k">created</span><span class="v">${fmtFull(item.createdAt)}</span>
+        <span class="k">updated</span><span class="v">${fmtFull(item.updatedAt)}</span>
+        <span class="k">importance</span><span class="v">${item.importance}</span>
+        <span class="k">times recalled</span><span class="v">${item.retrievals.length}</span>
+      </div></div>
+    <div class="d-section"><h4>Edit history</h4>${historyHtml}</div>
+    <div class="d-section"><h4>Retrieval history</h4>${retrievalsHtml}</div>`);
+}
+
+function openSessionTurn(id) {
+  const t = M.session.find(x => x.id === id);
+  if (!t) return;
+  openDrawer("Session memory · turn", `
+    <div class="d-section"><h4>Verbatim content</h4>
+      <div class="d-quote">${esc(t.content)}</div></div>
+    <div class="d-section"><h4>Why it is here</h4>
+      <p>This is raw working memory. The turn was appended to the context window the moment it
+      happened - no analysis, no filtering, no compression. It is stored so the model can see
+      the conversation so far on the next request.</p></div>
+    <div class="d-section"><h4>What happens to it</h4>
+      <p class="dim">It is re-sent to the model on every turn (costing ~${t.tokens} tokens each time)
+      until the session ends. It will NOT survive "end session" - only whatever the
+      extraction stage saved to episodic/semantic memory will.</p></div>
+    <div class="d-section"><h4>Record</h4>
+      <div class="d-kv">
+        <span class="k">role</span><span class="v">${t.role}</span>
+        <span class="k">at</span><span class="v">${fmtFull(t.at)}</span>
+        <span class="k">est. tokens</span><span class="v">${t.tokens}</span>
+      </div></div>`);
+}
+
+function openXray() {
+  if (!lastPrompt) {
+    openDrawer("Prompt x-ray", `<div class="d-section"><p class="dim">No prompt captured yet. Send a message first, then come back - you will see the exact messages array sent to the model, with retrieved memories highlighted inside it.</p></div>`);
+    return;
+  }
+  const dump = lastPrompt.map(m => `[${m.role}]\n${m.content}`).join("\n\n" + "-".repeat(40) + "\n\n");
+  openDrawer("Prompt x-ray · last turn", `
+    <div class="d-section"><h4>What this is</h4>
+      <p>The exact messages array sent to the ${S.mode === "live" ? "model via OpenRouter" : "demo model"} on the last turn.
+      Notice the RETRIEVED MEMORIES block inside the system message - that is contextual memory doing its job,
+      and the conversation turns below it are session memory being replayed.</p></div>
+    <div class="d-section"><h4>Messages</h4>
+      <pre class="promptdump">${esc(dump)}</pre></div>
+    ${lastExtractRaw ? `<div class="d-section"><h4>Raw extraction output (stage 4)</h4>
+      <pre class="promptdump">${esc(lastExtractRaw)}</pre></div>` : ""}`);
+}
+
+/* ------------------------------ wiring ------------------------------- */
+document.addEventListener("click", (e) => {
+  const opener = e.target.closest("[data-open]");
+  if (opener && opener.dataset.open) {
+    const [kind, id] = opener.dataset.open.split(":");
+    if (kind === "item") openItem(id);
+    else if (kind === "session") openSessionTurn(id);
+    else if (kind === "xray") openXray();
+    return;
+  }
+  const explainBtn = e.target.closest("[data-explain]");
+  if (explainBtn) {
+    const ex = EXPLAIN[explainBtn.dataset.explain];
+    if (ex) openDrawer(ex.title, ex.body);
+    return;
+  }
+  const fill = e.target.closest("[data-fill]");
+  if (fill) {
+    $("#input").value = fill.dataset.fill;
+    $("#input").focus();
+  }
+});
+$("#drawerClose").addEventListener("click", closeDrawer);
+$("#overlay").addEventListener("click", closeDrawer);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+
+$("#sendBtn").addEventListener("click", handleSend);
+$("#input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+});
+
+$("#endSessionBtn").addEventListener("click", endSession);
+$("#wipeBtn").addEventListener("click", () => {
+  if (!confirm("Erase ALL memories (session, episodic, semantic)? This cannot be undone.")) return;
+  M = {session: [], episodic: [], semantic: [], sessionStartedAt: null};
+  contextual = []; lastPrompt = null; lastExtractRaw = null;
+  persist(); renderAll();
+  logEvent("info", "all memory stores wiped");
+});
+$("#xrayBtn").addEventListener("click", openXray);
+
+function setMode(mode) {
+  S.mode = mode;
+  $("#modeDemo").classList.toggle("on", mode === "demo");
+  $("#modeLive").classList.toggle("on", mode === "live");
+  $("#liveCtls").style.display = mode === "live" ? "flex" : "none";
+  persistSettings();
+  logEvent("info", mode === "live"
+    ? `live mode: real LLM calls via OpenRouter (${esc(S.model)})`
+    : "demo mode: simulated model, real memory pipeline");
+}
+$("#modeDemo").addEventListener("click", () => setMode("demo"));
+$("#modeLive").addEventListener("click", () => setMode("live"));
+$("#apiKey").addEventListener("change", e => { S.apiKey = e.target.value.trim(); persistSettings(); });
+$("#modelSel").addEventListener("change", e => {
+  if (e.target.value === "__custom") {
+    $("#modelCustom").style.display = "inline-block";
+    $("#modelCustom").focus();
+  } else {
+    $("#modelCustom").style.display = "none";
+    S.model = e.target.value;
+    persistSettings();
+  }
+});
+$("#modelCustom").addEventListener("change", e => {
+  if (e.target.value.trim()) { S.model = e.target.value.trim(); persistSettings(); }
+});
+
+/* ------------------------------- boot -------------------------------- */
+load();
+$("#apiKey").value = S.apiKey;
+if ([...$("#modelSel").options].some(o => o.value === S.model)) $("#modelSel").value = S.model;
+else { $("#modelSel").value = "__custom"; $("#modelCustom").style.display = "inline-block"; $("#modelCustom").value = S.model; }
+setMode(S.mode);
+renderAll();
+logEvent("info", `glassbox online - ${M.semantic.length} semantic, ${M.episodic.length} episodic memories loaded from localStorage`);
+if (M.session.length) logEvent("info", `restored ${M.session.length} session turn(s) from your last visit`);
+</script>
+</body>
+</html>
