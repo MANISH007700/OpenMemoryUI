@@ -13,12 +13,12 @@ The animated preview above plays inline on GitHub. [Open the full MP4 with audio
 
 The agent's memory is split into four stores, each rendered as a live panel:
 
-| Store | What it holds | Lifetime |
-|---|---|---|
-| **Session memory** | The context window: every turn, verbatim, re-sent to the model on each request | Until you end the session |
-| **Episodic memory** | A time-stamped diary of events ("that exchange at 23:16") | Persistent (localStorage) |
-| **Semantic memory** | Distilled facts, preferences, and skills extracted from what you say | Persistent (localStorage) |
-| **Contextual memory** | The retrieval spotlight: which memories were recalled for the last message, with relevance scores | Recomputed every turn |
+| Store                 | What it holds                                                                                     | Lifetime                  |
+| --------------------- | ------------------------------------------------------------------------------------------------- | ------------------------- |
+| **Session memory**    | The context window: every turn, verbatim, re-sent to the model on each request                    | Until you end the session |
+| **Episodic memory**   | A time-stamped diary of events ("that exchange at 23:16")                                         | Persistent (localStorage) |
+| **Semantic memory**   | Distilled facts, preferences, and skills extracted from what you say                              | Persistent (localStorage) |
+| **Contextual memory** | The retrieval spotlight: which memories were recalled for the last message, with relevance scores | Recomputed every turn     |
 
 Every message runs through a visible five-stage pipeline: **Receive → Retrieve → Generate → Extract → Write**.
 Animated packets fly from your message into whichever store it lands in, and the memory-bus log at the bottom records every read and write.
@@ -28,8 +28,12 @@ Click the `?` on any panel for a plain-language explainer of that memory type.
 
 ## Running it
 
-It is a single self-contained `index.html`.
-Open it in a browser, or serve it from any static host.
+OpenMemoryUI is a plain static app: `index.html` loads `assets/css/app.css` and
+`assets/js/app.js`. There is no framework, bundler, backend, or build step.
+
+Open it in a browser, or serve the repository root from any static host.
+Netlify can publish this repo directly from the root; `netlify.toml` pins that
+static publish setup.
 
 ### Demo mode (default, zero setup)
 
