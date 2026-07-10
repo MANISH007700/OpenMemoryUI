@@ -5,9 +5,9 @@ Every message you send is traced live through a real memory pipeline, so you can
 
 ## Launch video
 
-[![OpenMemoryUI launch video](assets/openmemoryui-launch.jpg)](assets/openmemoryui-launch.mp4)
+[![OpenMemoryUI launch video preview](assets/openmemoryui-launch-preview.gif)](https://raw.githubusercontent.com/MANISH007700/OpenMemoryUI/master/assets/openmemoryui-launch.mp4)
 
-[Watch the launch video](assets/openmemoryui-launch.mp4) - a 21-second demo made with Brag/Hyperframes. The same video is embedded in the starter UI.
+The animated preview above plays inline on GitHub. [Open the full MP4 with audio](https://raw.githubusercontent.com/MANISH007700/OpenMemoryUI/master/assets/openmemoryui-launch.mp4) - a 21-second demo made with Brag/Hyperframes. The same video is embedded in the starter UI.
 
 ## What it shows
 
