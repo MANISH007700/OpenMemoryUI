@@ -587,6 +587,7 @@ pre.promptdump {
         <option value="qwen/qwen3-next-80b-a3b-instruct:free">qwen3-next-80b (free)</option>
         <option value="openai/gpt-oss-120b:free">gpt-oss-120b (free)</option>
         <option value="meta-llama/llama-3.3-70b-instruct:free">llama-3.3-70b (free)</option>
+        <option value="__browse">browse all on openrouter.ai ↗</option>
         <option value="__custom">custom model id...</option>
       </select>
       <input type="text" id="modelCustom" placeholder="vendor/model-id" size="16" style="display:none">
@@ -923,6 +924,52 @@ async function callModelOnce(model, messages, {json=false, maxTokens=700} = {}) 
   const text = data.choices?.[0]?.message?.content ?? "";
   if (!text) throw new Error("Model returned an empty response.");
   return text;
+}
+
+async function populateModels() {
+  // Replace the static fallback list with the live OpenRouter catalog.
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/models");
+    if (!res.ok) return;
+    const data = (await res.json()).data || [];
+    if (!data.length) return;
+    const sel = $("#modelSel");
+    const free = data.filter(m => m.id.endsWith(":free")).sort((a,b) => a.id.localeCompare(b.id));
+    const paid = data.filter(m => !m.id.endsWith(":free")).sort((a,b) => a.id.localeCompare(b.id));
+    sel.innerHTML = "";
+    const mk = m => {
+      const o = document.createElement("option");
+      o.value = m.id;
+      o.textContent = m.id;
+      if (m.context_length) o.title = `${m.name || m.id} · ${Math.round(m.context_length/1000)}k context`;
+      return o;
+    };
+    const gFree = document.createElement("optgroup");
+    gFree.label = `Free models (${free.length})`;
+    free.forEach(m => gFree.appendChild(mk(m)));
+    const gPaid = document.createElement("optgroup");
+    gPaid.label = `Paid models (${paid.length}) - need OpenRouter credits`;
+    paid.forEach(m => gPaid.appendChild(mk(m)));
+    sel.append(gFree, gPaid);
+    const oBrowse = document.createElement("option");
+    oBrowse.value = "__browse";
+    oBrowse.textContent = "browse all on openrouter.ai ↗";
+    const oCustom = document.createElement("option");
+    oCustom.value = "__custom";
+    oCustom.textContent = "custom model id...";
+    sel.append(oBrowse, oCustom);
+    if ([...sel.options].some(o => o.value === S.model)) {
+      sel.value = S.model;
+      $("#modelCustom").style.display = "none";
+    } else {
+      sel.value = "__custom";
+      $("#modelCustom").style.display = "inline-block";
+      $("#modelCustom").value = S.model;
+    }
+    logEvent("info", `model catalog loaded from OpenRouter: ${free.length} free, ${paid.length} paid`);
+  } catch (e) {
+    /* offline or blocked: the static fallback list stays */
+  }
 }
 
 function buildChatMessages(userMsg, retrieved) {
@@ -1592,6 +1639,12 @@ $("#modeDemo").addEventListener("click", () => setMode("demo"));
 $("#modeLive").addEventListener("click", () => setMode("live"));
 $("#apiKey").addEventListener("change", e => { S.apiKey = e.target.value.trim(); persistSettings(); });
 $("#modelSel").addEventListener("change", e => {
+  if (e.target.value === "__browse") {
+    window.open("https://openrouter.ai/models", "_blank", "noopener");
+    if ([...e.target.options].some(o => o.value === S.model)) e.target.value = S.model;
+    else e.target.value = "__custom";
+    return;
+  }
   if (e.target.value === "__custom") {
     $("#modelCustom").style.display = "inline-block";
     $("#modelCustom").focus();
@@ -1611,6 +1664,7 @@ $("#apiKey").value = S.apiKey;
 if ([...$("#modelSel").options].some(o => o.value === S.model)) $("#modelSel").value = S.model;
 else { $("#modelSel").value = "__custom"; $("#modelCustom").style.display = "inline-block"; $("#modelCustom").value = S.model; }
 setMode(S.mode);
+populateModels();
 renderAll();
 logEvent("info", `glassbox online - ${M.semantic.length} semantic, ${M.episodic.length} episodic memories loaded from localStorage`);
 if (M.session.length) logEvent("info", `restored ${M.session.length} session turn(s) from your last visit`);
