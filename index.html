@@ -513,6 +513,7 @@ pre.promptdump {
   max-width: 100%; overflow-x: auto;
 }
 .pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+#drawer .d-body a { color: var(--contextual); text-decoration: underline dotted; }
 
 /* welcome hero inside chat */
 .hero {
@@ -576,22 +577,20 @@ pre.promptdump {
       <span>mode</span>
       <span class="mode-pill">
         <button id="modeDemo" class="on" title="Simulated model. No key needed. Memory pipeline is fully real.">demo</button>
-        <button id="modeLive" title="Real LLM via OpenRouter. Paste your key.">live</button>
+        <button id="modeLive" title="Real LLM via OpenRouter, Anthropic or OpenAI. Paste your key.">live</button>
       </span>
     </div>
     <div class="ctl" id="liveCtls" style="display:none">
-      <input type="password" id="apiKey" placeholder="sk-or-v1-..." size="18" title="OpenRouter API key. Stored only in this browser's localStorage.">
-      <select id="modelSel" title="Model to use via OpenRouter. If it is rate-limited, the app automatically falls back to the other free models.">
-        <option value="nvidia/nemotron-3-super-120b-a12b:free">nemotron-3-super (free)</option>
-        <option value="google/gemma-4-31b-it:free">gemma-4-31b (free)</option>
-        <option value="qwen/qwen3-next-80b-a3b-instruct:free">qwen3-next-80b (free)</option>
-        <option value="openai/gpt-oss-120b:free">gpt-oss-120b (free)</option>
-        <option value="meta-llama/llama-3.3-70b-instruct:free">llama-3.3-70b (free)</option>
-        <option value="__browse">browse all on openrouter.ai ↗</option>
-        <option value="__custom">custom model id...</option>
+      <select id="providerSel" title="API provider. Whichever key you add, the model list fills with that provider's models.">
+        <option value="openrouter">OpenRouter</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="openai">OpenAI</option>
       </select>
-      <input type="text" id="modelCustom" placeholder="vendor/model-id" size="16" style="display:none">
+      <input type="password" id="apiKey" placeholder="sk-or-v1-..." size="18" title="API key for the selected provider. Stored only in this browser's localStorage.">
+      <select id="modelSel" title="Models available on the selected provider. Fetched live from the provider's API once a key is added."></select>
+      <input type="text" id="modelCustom" placeholder="model-id" size="16" style="display:none">
     </div>
+    <button class="tbtn" id="howBtn" title="How Memory Glassbox works: modes, keys, models and the memory pipeline">how it works</button>
     <button class="tbtn" id="xrayBtn" title="See the exact prompt sent to the model on the last turn">prompt x-ray</button>
     <button class="tbtn" id="endSessionBtn" title="Consolidate: summarize this session into episodic memory, then clear working memory">end session</button>
     <button class="tbtn danger" id="wipeBtn" title="Erase every stored memory">wipe all</button>
@@ -765,12 +764,19 @@ let lastPrompt = null;    // exact messages array sent to the model on last turn
 let lastExtractRaw = null;
 let busy = false;
 
+const DEFAULT_MODELS = {
+  openrouter: "nvidia/nemotron-3-super-120b-a12b:free",
+  anthropic:  "claude-sonnet-5",
+  openai:     "gpt-4o-mini",
+};
 let S = {                 // settings (persisted separately)
   mode: "demo",
-  apiKey: "",
-  model: "nvidia/nemotron-3-super-120b-a12b:free",
+  provider: "openrouter",                              // openrouter | anthropic | openai
+  keys:   { openrouter: "", anthropic: "", openai: "" },
+  models: { ...DEFAULT_MODELS },                       // last chosen model per provider
+  onboarded: false,
 };
-// Free models rate-limit often; when the chosen one 429s, fall through this chain.
+// Free OpenRouter models rate-limit often; when the chosen one 429s, fall through this chain.
 const FALLBACK_MODELS = [
   "nvidia/nemotron-3-super-120b-a12b:free",
   "google/gemma-4-31b-it:free",
@@ -778,12 +784,53 @@ const FALLBACK_MODELS = [
   "openai/gpt-oss-120b:free",
   "meta-llama/llama-3.3-70b-instruct:free",
 ];
+const PROVIDERS = {
+  openrouter: {
+    label: "OpenRouter",
+    keyPlaceholder: "sk-or-v1-...",
+    keyUrl: "https://openrouter.ai/settings/keys",
+    needsKeyForModels: false,     // catalog endpoint is public
+    browseUrl: "https://openrouter.ai/models",
+    staticModels: FALLBACK_MODELS,
+  },
+  anthropic: {
+    label: "Anthropic",
+    keyPlaceholder: "sk-ant-...",
+    keyUrl: "https://console.anthropic.com/settings/keys",
+    needsKeyForModels: true,
+    staticModels: ["claude-opus-4-8", "claude-sonnet-5", "claude-sonnet-4-6", "claude-haiku-4-5"],
+  },
+  openai: {
+    label: "OpenAI",
+    keyPlaceholder: "sk-...",
+    keyUrl: "https://platform.openai.com/api-keys",
+    needsKeyForModels: true,
+    staticModels: ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini"],
+  },
+};
+const currentKey = () => S.keys[S.provider] || "";
+const currentModel = () => S.models[S.provider] || DEFAULT_MODELS[S.provider];
 
 function persist() { localStorage.setItem(STORE_KEY, JSON.stringify(M)); }
 function persistSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(S)); }
 function load() {
   try { const raw = localStorage.getItem(STORE_KEY); if (raw) M = Object.assign(M, JSON.parse(raw)); } catch(e) {}
-  try { const raw = localStorage.getItem(SETTINGS_KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch(e) {}
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      // migrate pre-provider settings ({apiKey, model} was OpenRouter-only)
+      if (!s.keys) {
+        s.keys = { openrouter: s.apiKey || "", anthropic: "", openai: "" };
+        s.models = { ...DEFAULT_MODELS, openrouter: s.model || DEFAULT_MODELS.openrouter };
+        delete s.apiKey; delete s.model;
+      }
+      S = Object.assign(S, s);
+      S.keys = Object.assign({ openrouter: "", anthropic: "", openai: "" }, S.keys);
+      S.models = Object.assign({ ...DEFAULT_MODELS }, S.models);
+      if (!PROVIDERS[S.provider]) S.provider = "openrouter";
+    }
+  } catch(e) {}
 }
 
 /* --------------------------- memory items --------------------------- */
@@ -887,8 +934,20 @@ function demoReply(userMsg, retrieved) {
 }
 
 /* --------------------------- live LLM calls -------------------------- */
+/* All calls go straight from the browser to the selected provider.
+   OpenRouter keeps its free-model fallback chain; Anthropic and OpenAI
+   call exactly the model you picked. */
+async function callLLM(messages, opts = {}) {
+  if (S.provider === "openrouter") return callOpenRouter(messages, opts);
+  return callProviderOnce(S.provider, currentModel(), messages, opts);
+}
+function callProviderOnce(provider, model, messages, opts) {
+  if (provider === "anthropic") return callAnthropic(model, messages, opts);
+  if (provider === "openai") return callOpenAI(model, messages, opts);
+  return callModelOnce(model, messages, opts);
+}
 async function callOpenRouter(messages, opts = {}) {
-  const chain = [S.model, ...FALLBACK_MODELS.filter(m => m !== S.model)];
+  const chain = [currentModel(), ...FALLBACK_MODELS.filter(m => m !== currentModel())];
   let lastErr;
   for (const model of chain) {
     try {
@@ -903,72 +962,183 @@ async function callOpenRouter(messages, opts = {}) {
   }
   throw new Error(`All ${chain.length} free models are busy right now. Last error: ${lastErr.message}`);
 }
+async function readApiError(res, providerLabel) {
+  let detail = "";
+  try { detail = (await res.json()).error?.message || ""; } catch(e) {}
+  return new Error(`${providerLabel} ${res.status}: ${detail || res.statusText}`);
+}
 async function callModelOnce(model, messages, {json=false, maxTokens=700} = {}) {
   const body = { model, messages, temperature: json ? 0.1 : 0.7, max_tokens: maxTokens };
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${S.apiKey}`,
+      "Authorization": `Bearer ${S.keys.openrouter}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://local.memory-glassbox",
       "X-Title": "Memory Glassbox",
     },
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    let detail = "";
-    try { detail = (await res.json()).error?.message || ""; } catch(e) {}
-    throw new Error(`OpenRouter ${res.status}: ${detail || res.statusText}`);
-  }
+  if (!res.ok) throw await readApiError(res, "OpenRouter");
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content ?? "";
+  if (!text) throw new Error("Model returned an empty response.");
+  return text;
+}
+async function callAnthropic(model, messages, {maxTokens=700} = {}) {
+  // The Messages API takes the system prompt as a top-level field.
+  const system = messages.filter(m => m.role === "system").map(m => m.content).join("\n\n");
+  const turns = messages.filter(m => m.role !== "system");
+  while (turns.length && turns[0].role !== "user") turns.shift();  // API requires a user turn first
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": S.keys.anthropic,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+      "Content-Type": "application/json",
+    },
+    // Extra max_tokens headroom: on thinking-enabled Claude models,
+    // reasoning tokens count against max_tokens before any visible text.
+    body: JSON.stringify({ model, max_tokens: Math.max(maxTokens, 2048), system, messages: turns }),
+  });
+  if (!res.ok) throw await readApiError(res, "Anthropic");
+  const data = await res.json();
+  const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  if (!text) throw new Error("Model returned an empty response.");
+  return text;
+}
+async function callOpenAI(model, messages, {maxTokens=700} = {}) {
+  // max_completion_tokens (not max_tokens) and default temperature, so both
+  // classic gpt-4o-style and reasoning models accept the same request.
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${S.keys.openai}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ model, messages, max_completion_tokens: Math.max(maxTokens, 2048) }),
+  });
+  if (!res.ok) throw await readApiError(res, "OpenAI");
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content ?? "";
   if (!text) throw new Error("Model returned an empty response.");
   return text;
 }
 
-async function populateModels() {
-  // Replace the static fallback list with the live OpenRouter catalog.
-  try {
+/* ------------------------- model catalogs ---------------------------- */
+/* Each provider's model list is fetched live from its own API, so the
+   dropdown always shows exactly the models the pasted key can reach.
+   Returns [{label, models: [{id, title}]}] optgroups. */
+async function fetchModelGroups(provider) {
+  if (provider === "openrouter") {
     const res = await fetch("https://openrouter.ai/api/v1/models");
-    if (!res.ok) return;
+    if (!res.ok) throw await readApiError(res, "OpenRouter");
     const data = (await res.json()).data || [];
-    if (!data.length) return;
-    const sel = $("#modelSel");
+    if (!data.length) throw new Error("empty catalog");
     const free = data.filter(m => m.id.endsWith(":free")).sort((a,b) => a.id.localeCompare(b.id));
     const paid = data.filter(m => !m.id.endsWith(":free")).sort((a,b) => a.id.localeCompare(b.id));
-    sel.innerHTML = "";
-    const mk = m => {
+    const mk = m => ({ id: m.id, title: m.context_length ? `${m.name || m.id} · ${Math.round(m.context_length/1000)}k context` : (m.name || m.id) });
+    return [
+      { label: `Free models (${free.length})`, models: free.map(mk) },
+      { label: `Paid models (${paid.length}) - need OpenRouter credits`, models: paid.map(mk) },
+    ];
+  }
+  if (provider === "anthropic") {
+    const res = await fetch("https://api.anthropic.com/v1/models?limit=100", {
+      headers: {
+        "x-api-key": S.keys.anthropic,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+    });
+    if (!res.ok) throw await readApiError(res, "Anthropic");
+    const data = (await res.json()).data || [];
+    if (!data.length) throw new Error("empty catalog");
+    return [{
+      label: `Anthropic models (${data.length})`,
+      models: data.map(m => ({ id: m.id, title: m.display_name || m.id })),
+    }];
+  }
+  // openai - /v1/models lists everything (embeddings, tts, whisper...);
+  // keep only chat-capable model ids.
+  const res = await fetch("https://api.openai.com/v1/models", {
+    headers: { "Authorization": `Bearer ${S.keys.openai}` },
+  });
+  if (!res.ok) throw await readApiError(res, "OpenAI");
+  const data = (await res.json()).data || [];
+  const chat = data
+    .map(m => m.id)
+    .filter(id => /^(gpt-|o[134](-|$)|chatgpt-)/.test(id)
+      && !/(embed|whisper|tts|audio|realtime|image|dall-e|moderation|transcribe|search)/.test(id)
+      && !/-instruct/.test(id))
+    .sort();
+  if (!chat.length) throw new Error("no chat models found for this key");
+  return [{ label: `OpenAI chat models (${chat.length})`, models: chat.map(id => ({ id, title: id })) }];
+}
+
+function renderModelGroups(groups) {
+  const sel = $("#modelSel");
+  sel.innerHTML = "";
+  for (const g of groups) {
+    const og = document.createElement("optgroup");
+    og.label = g.label;
+    for (const m of g.models) {
       const o = document.createElement("option");
       o.value = m.id;
       o.textContent = m.id;
-      if (m.context_length) o.title = `${m.name || m.id} · ${Math.round(m.context_length/1000)}k context`;
-      return o;
-    };
-    const gFree = document.createElement("optgroup");
-    gFree.label = `Free models (${free.length})`;
-    free.forEach(m => gFree.appendChild(mk(m)));
-    const gPaid = document.createElement("optgroup");
-    gPaid.label = `Paid models (${paid.length}) - need OpenRouter credits`;
-    paid.forEach(m => gPaid.appendChild(mk(m)));
-    sel.append(gFree, gPaid);
+      if (m.title) o.title = m.title;
+      og.appendChild(o);
+    }
+    sel.appendChild(og);
+  }
+  if (S.provider === "openrouter") {
     const oBrowse = document.createElement("option");
     oBrowse.value = "__browse";
     oBrowse.textContent = "browse all on openrouter.ai ↗";
-    const oCustom = document.createElement("option");
-    oCustom.value = "__custom";
-    oCustom.textContent = "custom model id...";
-    sel.append(oBrowse, oCustom);
-    if ([...sel.options].some(o => o.value === S.model)) {
-      sel.value = S.model;
-      $("#modelCustom").style.display = "none";
-    } else {
-      sel.value = "__custom";
-      $("#modelCustom").style.display = "inline-block";
-      $("#modelCustom").value = S.model;
-    }
-    logEvent("info", `model catalog loaded from OpenRouter: ${free.length} free, ${paid.length} paid`);
+    sel.appendChild(oBrowse);
+  }
+  const oCustom = document.createElement("option");
+  oCustom.value = "__custom";
+  oCustom.textContent = "custom model id...";
+  sel.appendChild(oCustom);
+  syncModelSelection();
+}
+
+function syncModelSelection() {
+  const sel = $("#modelSel");
+  const model = currentModel();
+  if ([...sel.options].some(o => o.value === model)) {
+    sel.value = model;
+    $("#modelCustom").style.display = "none";
+  } else {
+    sel.value = "__custom";
+    $("#modelCustom").style.display = "inline-block";
+    $("#modelCustom").value = model;
+  }
+}
+
+function renderStaticModels() {
+  // Instant fallback list while (or in case) the live catalog fetch is out.
+  const cfg = PROVIDERS[S.provider];
+  renderModelGroups([{ label: `${cfg.label} - common models`, models: cfg.staticModels.map(id => ({ id, title: id })) }]);
+}
+
+async function populateModels() {
+  const provider = S.provider;
+  const cfg = PROVIDERS[provider];
+  if (cfg.needsKeyForModels && !S.keys[provider]) {
+    logEvent("info", `${cfg.label}: paste an API key to load your live model list (showing common defaults for now)`);
+    return;
+  }
+  try {
+    const groups = await fetchModelGroups(provider);
+    if (S.provider !== provider) return;  // user switched provider mid-fetch
+    renderModelGroups(groups);
+    const total = groups.reduce((a,g) => a + g.models.length, 0);
+    logEvent("info", `${cfg.label} model catalog loaded: ${total} model(s) available to your key`);
   } catch (e) {
-    /* offline or blocked: the static fallback list stays */
+    logEvent("error", `could not load ${cfg.label} models (${esc(e.message)}) - using the built-in list`);
   }
 }
 
@@ -1010,9 +1180,13 @@ function buildExtractMessages(userMsg, reply) {
 }
 
 async function extractLive(userMsg, reply) {
-  // Free endpoints sometimes return prose or garbage instead of JSON, so a
-  // parse failure is treated like a model failure: move on down the chain.
-  const chain = [S.model, ...FALLBACK_MODELS.filter(m => m !== S.model)];
+  if (S.provider !== "openrouter") {
+    const raw = await callProviderOnce(S.provider, currentModel(), buildExtractMessages(userMsg, reply), {json: true, maxTokens: 900});
+    return parseExtraction(raw);
+  }
+  // Free OpenRouter endpoints sometimes return prose or garbage instead of
+  // JSON, so a parse failure is treated like a model failure: move on down the chain.
+  const chain = [currentModel(), ...FALLBACK_MODELS.filter(m => m !== currentModel())];
   let lastErr;
   for (const model of chain) {
     try {
@@ -1271,8 +1445,8 @@ async function handleSend() {
   const input = $("#input");
   const text = input.value.trim();
   if (!text) return;
-  if (S.mode === "live" && !S.apiKey) {
-    logEvent("error", "Live mode needs an OpenRouter API key. Paste one in the top bar, or switch to demo mode.");
+  if (S.mode === "live" && !currentKey()) {
+    logEvent("error", `Live mode needs a ${PROVIDERS[S.provider].label} API key. Paste one in the top bar (get one at ${PROVIDERS[S.provider].keyUrl}), or switch to demo mode.`);
     $("#apiKey").focus();
     return;
   }
@@ -1317,12 +1491,12 @@ async function handleSend() {
   await sleep(650);
 
   /* 3 · GENERATE */
-  setStage("generate", S.mode === "live" ? `calling ${S.model.split("/").pop()}` : "demo model composing a reply");
+  setStage("generate", S.mode === "live" ? `calling ${currentModel().split("/").pop()} via ${PROVIDERS[S.provider].label}` : "demo model composing a reply");
   lastPrompt = buildChatMessages(text, contextual);
   let reply;
   try {
     if (S.mode === "live") {
-      reply = await callOpenRouter(lastPrompt);
+      reply = await callLLM(lastPrompt);
     } else {
       await sleep(600);
       reply = demoReply(text, contextual);
@@ -1575,13 +1749,70 @@ function openXray() {
   const dump = lastPrompt.map(m => `[${m.role}]\n${m.content}`).join("\n\n" + "-".repeat(40) + "\n\n");
   openDrawer("Prompt x-ray · last turn", `
     <div class="d-section"><h4>What this is</h4>
-      <p>The exact messages array sent to the ${S.mode === "live" ? "model via OpenRouter" : "demo model"} on the last turn.
+      <p>The exact messages array sent to the ${S.mode === "live" ? "model via " + PROVIDERS[S.provider].label : "demo model"} on the last turn.
       Notice the RETRIEVED MEMORIES block inside the system message - that is contextual memory doing its job,
       and the conversation turns below it are session memory being replayed.</p></div>
     <div class="d-section"><h4>Messages</h4>
       <pre class="promptdump">${esc(dump)}</pre></div>
     ${lastExtractRaw ? `<div class="d-section"><h4>Raw extraction output (stage 4)</h4>
       <pre class="promptdump">${esc(lastExtractRaw)}</pre></div>` : ""}`);
+}
+
+/* ---------------------------- onboarding ----------------------------- */
+function openOnboarding() {
+  openDrawer("How Memory Glassbox works", `
+    <div class="d-section"><h4>What this is</h4>
+      <p>A transparent agentic memory playground. Every message you send is traced
+      through a real 5-stage memory pipeline - <b>receive → retrieve → generate →
+      extract → write</b> - and the panels on the right show every read and write
+      as it happens. Click any stored memory to see exactly why it was kept.</p></div>
+
+    <div class="d-section"><h4>1 · Pick a mode</h4>
+      <p><b>demo</b> needs no key: a simulated model answers, but the memory
+      machinery (storage, retrieval, provenance) is fully real. Start here.</p>
+      <p class="dim"><b>live</b> replaces the simulated model with a real LLM -
+      generation and memory extraction are then done by the model you choose.</p></div>
+
+    <div class="d-section"><h4>2 · Bring your own key (live mode)</h4>
+      <p>Choose a provider in the top bar, then paste that provider's API key:</p>
+      <p class="dim">
+        · <b>OpenRouter</b> - one key, hundreds of models, several free ones.
+          Get a key at <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">openrouter.ai/settings/keys</a><br>
+        · <b>Anthropic</b> - Claude models (Opus, Sonnet, Haiku).
+          Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a><br>
+        · <b>OpenAI</b> - GPT and o-series models.
+          Get a key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a></p>
+      <p class="dim">You can add a key for each provider - each one is remembered
+      separately, and switching provider switches back to its key and model.</p></div>
+
+    <div class="d-section"><h4>3 · Your models appear automatically</h4>
+      <p>The moment a key is added, the model dropdown is filled by asking the
+      provider's own models API - so it lists exactly the models <b>your</b> key
+      can access, not a hardcoded list. Pick one and start chatting; there is also
+      a "custom model id" escape hatch if you know a model the list misses.</p>
+      <p class="dim">On OpenRouter, if your chosen free model is rate-limited the
+      app automatically falls through a chain of other free models.</p></div>
+
+    <div class="d-section"><h4>4 · Where your key lives</h4>
+      <p class="dim">Keys are stored only in this browser's localStorage and are
+      sent only to the provider you selected - requests go straight from your
+      browser to api.anthropic.com / api.openai.com / openrouter.ai. There is no
+      backend and nothing is logged anywhere else. "wipe all" clears memories;
+      clearing your browser storage removes the keys too.</p></div>
+
+    <div class="d-section"><h4>5 · Watch the memory</h4>
+      <p class="dim">The four panels are the whole story: <b>session</b> is the
+      context window (replayed every turn), <b>episodic</b> is a diary of events,
+      <b>semantic</b> holds distilled facts / preferences / skills, and
+      <b>contextual</b> shows what retrieval recalled for the last message and why.
+      Press "prompt x-ray" any time to see the exact prompt the model received,
+      with retrieved memories inside it. The "?" button on each panel explains it
+      in depth.</p></div>
+
+    <div class="d-section"><h4>Try it now</h4>
+      <p class="dim">Stay in demo mode and send: "My name is Manish and I work as a
+      data engineer" - then watch the violet semantic panel light up. Ask "what do
+      you remember about me?" a few messages later.</p></div>`);
 }
 
 /* ------------------------------ wiring ------------------------------- */
@@ -1632,17 +1863,36 @@ function setMode(mode) {
   $("#liveCtls").style.display = mode === "live" ? "flex" : "none";
   persistSettings();
   logEvent("info", mode === "live"
-    ? `live mode: real LLM calls via OpenRouter (${esc(S.model)})`
+    ? `live mode: real LLM calls via ${PROVIDERS[S.provider].label} (${esc(currentModel())})`
     : "demo mode: simulated model, real memory pipeline");
 }
 $("#modeDemo").addEventListener("click", () => setMode("demo"));
 $("#modeLive").addEventListener("click", () => setMode("live"));
-$("#apiKey").addEventListener("change", e => { S.apiKey = e.target.value.trim(); persistSettings(); });
+
+function setProvider(provider) {
+  S.provider = provider;
+  persistSettings();
+  const cfg = PROVIDERS[provider];
+  $("#providerSel").value = provider;
+  $("#apiKey").value = S.keys[provider] || "";
+  $("#apiKey").placeholder = cfg.keyPlaceholder;
+  $("#apiKey").title = `${cfg.label} API key. Stored only in this browser's localStorage. Get one at ${cfg.keyUrl}`;
+  renderStaticModels();   // instant list; replaced by the live catalog below
+  populateModels();
+}
+$("#providerSel").addEventListener("change", e => {
+  setProvider(e.target.value);
+  logEvent("info", `provider switched to ${PROVIDERS[S.provider].label}`);
+});
+$("#apiKey").addEventListener("change", e => {
+  S.keys[S.provider] = e.target.value.trim();
+  persistSettings();
+  if (S.keys[S.provider]) populateModels();   // key added: fetch this provider's live model list
+});
 $("#modelSel").addEventListener("change", e => {
   if (e.target.value === "__browse") {
-    window.open("https://openrouter.ai/models", "_blank", "noopener");
-    if ([...e.target.options].some(o => o.value === S.model)) e.target.value = S.model;
-    else e.target.value = "__custom";
+    window.open(PROVIDERS.openrouter.browseUrl, "_blank", "noopener");
+    syncModelSelection();
     return;
   }
   if (e.target.value === "__custom") {
@@ -1650,22 +1900,25 @@ $("#modelSel").addEventListener("change", e => {
     $("#modelCustom").focus();
   } else {
     $("#modelCustom").style.display = "none";
-    S.model = e.target.value;
+    S.models[S.provider] = e.target.value;
     persistSettings();
   }
 });
 $("#modelCustom").addEventListener("change", e => {
-  if (e.target.value.trim()) { S.model = e.target.value.trim(); persistSettings(); }
+  if (e.target.value.trim()) { S.models[S.provider] = e.target.value.trim(); persistSettings(); }
 });
+$("#howBtn").addEventListener("click", openOnboarding);
 
 /* ------------------------------- boot -------------------------------- */
 load();
-$("#apiKey").value = S.apiKey;
-if ([...$("#modelSel").options].some(o => o.value === S.model)) $("#modelSel").value = S.model;
-else { $("#modelSel").value = "__custom"; $("#modelCustom").style.display = "inline-block"; $("#modelCustom").value = S.model; }
+setProvider(S.provider);
 setMode(S.mode);
-populateModels();
 renderAll();
+if (!S.onboarded) {
+  S.onboarded = true;
+  persistSettings();
+  openOnboarding();
+}
 logEvent("info", `glassbox online - ${M.semantic.length} semantic, ${M.episodic.length} episodic memories loaded from localStorage`);
 if (M.session.length) logEvent("info", `restored ${M.session.length} session turn(s) from your last visit`);
 </script>

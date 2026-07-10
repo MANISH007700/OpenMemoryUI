@@ -30,17 +30,24 @@ Open it in a browser, or serve it from any static host.
 A simulated model with rule-based extraction, so the whole pipeline works instantly with no API key.
 The memory machinery (storage, retrieval, scoring, provenance) is identical to live mode.
 
-### Live mode (real LLM via OpenRouter)
+### Live mode (real LLM - OpenRouter, Anthropic, or OpenAI)
 
-1. Create a free API key at [openrouter.ai/keys](https://openrouter.ai/keys).
-2. Switch the mode toggle to **live** and paste your key in the top bar.
-3. Chat. Replies and memory extraction are now done by a real model.
+1. Switch the mode toggle to **live** and pick a provider in the top bar.
+2. Paste that provider's API key:
+   - **OpenRouter**: [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) - one key, hundreds of models, several free ones.
+   - **Anthropic**: [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) - Claude models (Opus, Sonnet, Haiku).
+   - **OpenAI**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys) - GPT and o-series models.
+3. The model dropdown fills automatically with the models your key can access, fetched live from the provider's own models API.
+4. Chat. Replies and memory extraction are now done by the model you picked.
 
-The key is stored only in your browser's localStorage and is sent only to OpenRouter.
-It is never committed to this repo or sent anywhere else.
+You can store a key per provider; each provider remembers its own key and last chosen model.
+Keys live only in your browser's localStorage and are sent only to the provider you selected - requests go straight from the browser to the provider, with no backend in between.
+They are never committed to this repo or sent anywhere else.
 
-Free-tier models get rate-limited upstream, so the app automatically falls back through several free models when the selected one is busy.
-You can also pick any paid model with "custom model id".
+On OpenRouter, free-tier models get rate-limited upstream, so the app automatically falls back through several free models when the selected one is busy.
+Every provider also has a "custom model id" escape hatch for models the list misses.
+
+A "how it works" onboarding opens on first visit and stays available from the top bar.
 
 ## Extras worth trying
 
