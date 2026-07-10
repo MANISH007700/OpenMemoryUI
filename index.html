@@ -583,6 +583,31 @@ pre.promptdump {
   font-size: 22px; font-weight: 700; line-height: 1.2;
   margin-bottom: 8px;
 }
+.launch-demo {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--ink);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.launch-demo video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--ink);
+}
+.launch-demo .caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+}
+#drawer .launch-demo { margin-bottom: 18px; }
 .hero h1 em { font-style: normal; color: var(--contextual); }
 .hero p { color: var(--muted); font-size: 13.5px; margin-bottom: 10px; }
 .hero .try {
@@ -657,6 +682,10 @@ pre.promptdump {
     <section id="chatCol">
       <div id="chatScroll">
         <div class="hero" id="hero">
+          <div class="launch-demo">
+            <video controls playsinline preload="metadata" poster="assets/openmemoryui-launch.jpg" src="assets/openmemoryui-launch.mp4"></video>
+            <div class="caption"><span>Launch demo</span><span>21 seconds</span></div>
+          </div>
           <h1>Talk to an agent whose memory is a <em>glass box</em>.</h1>
           <p>
             Every message you send is traced through a real memory pipeline:
@@ -1879,6 +1908,11 @@ function openXray() {
 /* ---------------------------- onboarding ----------------------------- */
 function openOnboarding() {
   openDrawer("How Memory Glassbox works", `
+    <div class="launch-demo">
+      <video controls playsinline preload="metadata" poster="assets/openmemoryui-launch.jpg" src="assets/openmemoryui-launch.mp4"></video>
+      <div class="caption"><span>Launch demo</span><span>21 seconds</span></div>
+    </div>
+
     <div class="d-section"><h4>What this is</h4>
       <p>A transparent agentic memory playground. Every message you send is traced
       through a real 5-stage memory pipeline - <b>receive → retrieve → generate →

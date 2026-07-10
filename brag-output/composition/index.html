@@ -1,0 +1,1123 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --ink: #0d141f;
+        --ink-2: #121b29;
+        --panel: #17222f;
+        --panel-2: #1d2a3a;
+        --line: #263548;
+        --text: #e8eef5;
+        --muted: #b9c6d3;
+        --faint: #a2b2c3;
+        --session: #6fd3ff;
+        --episodic: #ffb454;
+        --semantic: #a78bfa;
+        --contextual: #57e6c4;
+        --danger: #f87693;
+        --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+        --body: "Atkinson Hyperlegible", "Avenir Next", system-ui, sans-serif;
+        --mono: "Spline Sans Mono", "SFMono-Regular", ui-monospace, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        letter-spacing: 0;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--ink);
+        color: var(--text);
+        font-family: var(--body);
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background:
+          linear-gradient(90deg, rgba(38, 53, 72, 0.3) 1px, transparent 1px),
+          linear-gradient(0deg, rgba(38, 53, 72, 0.22) 1px, transparent 1px),
+          var(--ink);
+        background-size: 80px 80px;
+      }
+
+      .clip.scene {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        opacity: 0;
+      }
+
+      .stage-back {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(820px 520px at 26% 20%, rgba(87, 230, 196, 0.12), transparent 62%),
+          radial-gradient(900px 600px at 86% 76%, rgba(167, 139, 250, 0.12), transparent 66%),
+          linear-gradient(180deg, #121b29 0%, #0d141f 64%);
+      }
+
+      .safe {
+        position: absolute;
+        inset: 78px 104px;
+      }
+
+      .mono {
+        font-family: var(--mono);
+      }
+
+      .kicker {
+        font-family: var(--mono);
+        font-size: 24px;
+        color: var(--contextual);
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: var(--display);
+        font-weight: 700;
+      }
+
+      .hook-lockup {
+        position: absolute;
+        left: 150px;
+        top: 235px;
+        width: 1160px;
+      }
+
+      .dot-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 34px;
+      }
+
+      .memory-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        box-shadow: 0 0 28px currentColor;
+      }
+
+      .d-session {
+        color: var(--session);
+        background: var(--session);
+      }
+
+      .d-episodic {
+        color: var(--episodic);
+        background: var(--episodic);
+      }
+
+      .d-semantic {
+        color: var(--semantic);
+        background: var(--semantic);
+      }
+
+      .d-contextual {
+        color: var(--contextual);
+        background: var(--contextual);
+      }
+
+      .hook-title {
+        font-size: 142px;
+        line-height: 0.9;
+        color: var(--text);
+      }
+
+      .hook-copy {
+        margin-top: 36px;
+        font-size: 50px;
+        line-height: 1.18;
+        color: var(--muted);
+        max-width: 900px;
+      }
+
+      .flow-strip {
+        position: absolute;
+        left: 150px;
+        bottom: 118px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        font-family: var(--mono);
+        color: var(--faint);
+        font-size: 24px;
+      }
+
+      .flow-pill {
+        border: 1px solid var(--line);
+        background: rgba(23, 34, 47, 0.9);
+        border-radius: 8px;
+        padding: 10px 16px;
+      }
+
+      .brand-chip {
+        position: absolute;
+        right: 130px;
+        top: 120px;
+        border: 1px solid var(--line);
+        background: rgba(23, 34, 47, 0.72);
+        border-radius: 8px;
+        padding: 16px 20px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 20px;
+      }
+
+      .app-frame {
+        position: absolute;
+        left: 92px;
+        top: 72px;
+        width: 1736px;
+        height: 936px;
+        border: 1px solid var(--line);
+        background: var(--ink);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 34px 90px rgba(0, 0, 0, 0.38);
+      }
+
+      .topbar {
+        height: 74px;
+        border-bottom: 1px solid var(--line);
+        background: var(--ink-2);
+        display: flex;
+        align-items: center;
+        padding: 0 24px;
+        gap: 18px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: var(--display);
+        font-size: 27px;
+        font-weight: 700;
+      }
+
+      .brand small {
+        font-family: var(--mono);
+        color: var(--faint);
+        font-size: 14px;
+        font-weight: 400;
+        text-transform: uppercase;
+      }
+
+      .brand .mini-dots {
+        display: flex;
+        gap: 5px;
+      }
+
+      .brand .mini-dots i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: block;
+      }
+
+      .spacer {
+        flex: 1;
+      }
+
+      .top-button,
+      .mode {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--muted);
+        border-radius: 7px;
+        padding: 8px 14px;
+        font-family: var(--mono);
+        font-size: 15px;
+      }
+
+      .mode .on {
+        color: #06251d;
+        background: var(--contextual);
+        border-radius: 999px;
+        padding: 5px 11px;
+        margin-left: 7px;
+        font-weight: 700;
+      }
+
+      .workspace {
+        height: 744px;
+        padding: 20px 24px;
+        display: grid;
+        grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
+        gap: 20px;
+      }
+
+      .chat-col {
+        display: grid;
+        grid-template-rows: 1fr 108px 78px;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .chat-scroll {
+        border: 1px solid var(--line);
+        background: var(--ink-2);
+        border-radius: 10px;
+        padding: 24px;
+        overflow: hidden;
+      }
+
+      .hero-box {
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(140deg, rgba(87, 230, 196, 0.08), transparent 50%),
+          var(--panel);
+        border-radius: 10px;
+        padding: 30px;
+      }
+
+      .hero-box h2 {
+        font-size: 38px;
+        line-height: 1.12;
+        margin-bottom: 14px;
+      }
+
+      .hero-box em {
+        color: var(--contextual);
+        font-style: normal;
+      }
+
+      .hero-box p {
+        color: var(--muted);
+        font-size: 22px;
+        line-height: 1.42;
+      }
+
+      .try-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 18px;
+      }
+
+      .try-chip {
+        border: 1px solid var(--line);
+        background: var(--ink);
+        border-radius: 999px;
+        padding: 8px 14px;
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      .pipeline {
+        border: 1px solid var(--line);
+        background: var(--ink-2);
+        border-radius: 10px;
+        display: flex;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .stage {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 12px 10px;
+        overflow: hidden;
+        color: var(--muted);
+      }
+
+      .stage-fill {
+        position: absolute;
+        inset: 0;
+        background: rgba(87, 230, 196, 0.14);
+        border: 1px solid rgba(87, 230, 196, 0.75);
+        border-radius: 8px;
+        opacity: 0;
+      }
+
+      .stage span {
+        position: relative;
+        display: block;
+        font-family: var(--mono);
+        font-size: 13px;
+        text-transform: uppercase;
+        color: inherit;
+      }
+
+      .stage b {
+        position: relative;
+        display: block;
+        margin-top: 4px;
+        color: var(--faint);
+        font-family: var(--body);
+        font-size: 12px;
+        line-height: 1.2;
+        font-weight: 400;
+      }
+
+      .composer {
+        display: grid;
+        grid-template-columns: 1fr 116px;
+        gap: 12px;
+      }
+
+      .input-box {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 10px;
+        padding: 20px;
+        color: var(--text);
+        font-size: 18px;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      .typed-text {
+        display: block;
+        width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      .send {
+        border: 0;
+        border-radius: 10px;
+        background: var(--contextual);
+        color: #06251d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 23px;
+      }
+
+      .mem-grid {
+        display: grid;
+        grid-template-rows: 218px 1fr 1fr;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "session session"
+          "episodic semantic"
+          "contextual contextual";
+        gap: 18px;
+        min-width: 0;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 10px;
+        overflow: hidden;
+        min-width: 0;
+      }
+
+      .panel.session {
+        grid-area: session;
+      }
+
+      .panel.episodic {
+        grid-area: episodic;
+      }
+
+      .panel.semantic {
+        grid-area: semantic;
+      }
+
+      .panel.contextual {
+        grid-area: contextual;
+      }
+
+      .panel-head {
+        height: 48px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 14px;
+      }
+
+      .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        display: block;
+      }
+
+      .panel-head h3 {
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .panel-head small {
+        color: var(--faint);
+        font-family: var(--mono);
+        font-size: 12px;
+        margin-left: auto;
+      }
+
+      .panel-body {
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .empty-note {
+        color: var(--faint);
+        font-size: 17px;
+        font-style: italic;
+        line-height: 1.35;
+      }
+
+      .memory-card {
+        border: 1px solid var(--line);
+        background: var(--ink-2);
+        border-radius: 8px;
+        padding: 12px 14px;
+        min-height: 68px;
+        opacity: 0;
+      }
+
+      .memory-card .kind {
+        display: inline-block;
+        border-radius: 5px;
+        padding: 2px 8px;
+        margin-bottom: 7px;
+        font-family: var(--mono);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .kind.fact {
+        color: var(--semantic);
+        background: rgba(167, 139, 250, 0.15);
+      }
+
+      .kind.episode {
+        color: var(--episodic);
+        background: rgba(255, 180, 84, 0.15);
+      }
+
+      .kind.turn {
+        color: var(--session);
+        background: rgba(111, 211, 255, 0.15);
+      }
+
+      .kind.score {
+        color: var(--contextual);
+        background: rgba(87, 230, 196, 0.15);
+      }
+
+      .memory-card p {
+        color: var(--text);
+        font-size: 17px;
+        line-height: 1.28;
+      }
+
+      .memory-card small {
+        color: var(--faint);
+        display: block;
+        margin-top: 7px;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .score-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--line);
+        overflow: hidden;
+        margin-top: 10px;
+      }
+
+      .score-bar i {
+        display: block;
+        width: 0;
+        height: 100%;
+        background: var(--contextual);
+      }
+
+      .logbar {
+        height: 118px;
+        border-top: 1px solid var(--line);
+        background: var(--ink-2);
+        padding: 12px 24px;
+        font-family: var(--mono);
+      }
+
+      .log-title {
+        color: var(--faint);
+        text-transform: uppercase;
+        font-size: 14px;
+        margin-bottom: 9px;
+      }
+
+      .log-line {
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.55;
+        opacity: 0;
+      }
+
+      .log-line b {
+        color: var(--contextual);
+      }
+
+      .user-bubble,
+      .agent-bubble {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 16px 18px;
+        font-size: 20px;
+        line-height: 1.34;
+        max-width: 690px;
+      }
+
+      .user-bubble {
+        margin-left: auto;
+        background: #23415a;
+        border-color: #2f5578;
+      }
+
+      .agent-bubble {
+        margin-top: 16px;
+        background: var(--panel);
+      }
+
+      .packet {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--contextual);
+        box-shadow: 0 0 18px var(--contextual);
+        opacity: 0;
+      }
+
+      .callout {
+        position: absolute;
+        right: 122px;
+        top: 100px;
+        width: 470px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(23, 34, 47, 0.96);
+        padding: 24px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+      }
+
+      .callout h2 {
+        font-size: 38px;
+        line-height: 1.08;
+        margin-bottom: 12px;
+      }
+
+      .callout p {
+        color: var(--muted);
+        font-size: 21px;
+        line-height: 1.38;
+      }
+
+      .drawer {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 530px;
+        height: 100%;
+        border-left: 1px solid var(--line);
+        background: var(--ink-2);
+        box-shadow: -24px 0 70px rgba(0, 0, 0, 0.42);
+        padding: 30px;
+      }
+
+      .last-frame .workspace {
+        grid-template-columns: 1fr;
+        padding-right: 560px;
+      }
+
+      .last-frame .mem-grid {
+        display: none;
+      }
+
+      .drawer h2 {
+        font-size: 32px;
+        margin-bottom: 24px;
+      }
+
+      .drawer-section {
+        margin-bottom: 24px;
+      }
+
+      .drawer-section h3 {
+        color: var(--faint);
+        font-family: var(--mono);
+        font-size: 13px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .drawer-section p,
+      .drawer-section .quote {
+        color: var(--muted);
+        font-size: 19px;
+        line-height: 1.35;
+      }
+
+      .drawer-section .quote {
+        border-left: 3px solid var(--semantic);
+        background: var(--ink);
+        border-radius: 0 8px 8px 0;
+        padding: 12px 14px;
+        color: var(--text);
+      }
+
+      .final-card {
+        position: absolute;
+        left: 134px;
+        top: 176px;
+        width: 1030px;
+      }
+
+      .final-card h1 {
+        font-size: 118px;
+        line-height: 0.94;
+      }
+
+      .final-card p {
+        margin-top: 28px;
+        color: var(--muted);
+        font-size: 44px;
+        line-height: 1.22;
+        max-width: 920px;
+      }
+
+      .store-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 44px;
+      }
+
+      .store-chip {
+        border: 1px solid var(--line);
+        background: rgba(23, 34, 47, 0.86);
+        border-radius: 8px;
+        padding: 16px;
+        font-family: var(--mono);
+        font-size: 17px;
+        color: var(--muted);
+      }
+
+      .store-chip i {
+        display: block;
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        margin-bottom: 12px;
+      }
+
+      .video-badge {
+        position: absolute;
+        right: 134px;
+        bottom: 118px;
+        font-family: var(--mono);
+        font-size: 22px;
+        color: var(--contextual);
+        border: 1px solid rgba(87, 230, 196, 0.5);
+        background: rgba(87, 230, 196, 0.08);
+        border-radius: 8px;
+        padding: 16px 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="21.5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio
+        id="music"
+        class="clip"
+        data-start="0"
+        data-duration="21.5"
+        data-track-index="10"
+        data-volume="0.34"
+        src="assets/music/happy-beats-business-moves-vol-11-by-ende-dot-app.mp3"
+      ></audio>
+      <audio id="sfx-hook" class="clip" data-start="1.55" data-duration="0.12" data-track-index="11" data-volume="0.56" src="assets/sfx/interface/bong_001.ogg"></audio>
+      <audio id="sfx-reveal" class="clip" data-start="3.65" data-duration="0.18" data-track-index="12" data-volume="0.48" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+      <audio id="sfx-click" class="clip" data-start="7.95" data-duration="0.01" data-track-index="13" data-volume="0.72" src="assets/sfx/interface/click_003.ogg"></audio>
+      <audio id="sfx-write-one" class="clip" data-start="12.65" data-duration="0.11" data-track-index="14" data-volume="0.48" src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-write-two" class="clip" data-start="14.2" data-duration="0.11" data-track-index="15" data-volume="0.42" src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-final" class="clip" data-start="17.9" data-duration="0.9" data-track-index="16" data-volume="0.52" src="assets/sfx/impact/impactBell_heavy_000.ogg"></audio>
+
+      <section id="s1" class="clip scene" data-start="0" data-duration="3.2" data-track-index="1">
+        <div class="stage-back"></div>
+        <div class="brand-chip">agentic memory, made visible</div>
+        <div class="hook-lockup">
+          <div class="dot-row">
+            <i class="memory-dot d-session"></i>
+            <i class="memory-dot d-episodic"></i>
+            <i class="memory-dot d-semantic"></i>
+            <i class="memory-dot d-contextual"></i>
+          </div>
+          <h1 class="hook-title">OpenMemoryUI</h1>
+          <p class="hook-copy">Memory isn't magic. It's traceable.</p>
+        </div>
+        <div class="flow-strip">
+          <span class="flow-pill">receive</span>
+          <span>-></span>
+          <span class="flow-pill">retrieve</span>
+          <span>-></span>
+          <span class="flow-pill">generate</span>
+          <span>-></span>
+          <span class="flow-pill">extract</span>
+          <span>-></span>
+          <span class="flow-pill">write</span>
+        </div>
+      </section>
+
+      <section id="s2" class="clip scene" data-start="3.2" data-duration="3.8" data-track-index="1">
+        <div class="stage-back"></div>
+        <div class="app-frame app-reveal">
+          <div class="topbar">
+            <div class="brand">
+              <span class="mini-dots">
+                <i style="background: var(--session)"></i>
+                <i style="background: var(--episodic)"></i>
+                <i style="background: var(--semantic)"></i>
+                <i style="background: var(--contextual)"></i>
+              </span>
+              Memory Glassbox
+              <small>agentic memory, made visible</small>
+            </div>
+            <div class="spacer"></div>
+            <div class="mode">mode <span class="on">demo</span></div>
+            <div class="top-button">insights</div>
+            <div class="top-button">how it works</div>
+            <div class="top-button">prompt x-ray</div>
+          </div>
+          <div class="workspace">
+            <div class="chat-col">
+              <div class="chat-scroll">
+                <div class="hero-box">
+                  <h2>Talk to an agent whose memory is a <em>glass box</em>.</h2>
+                  <p>Every message you send is traced through a real memory pipeline. Watch the panels light up as it happens.</p>
+                  <div class="try-row">
+                    <span class="try-chip">"My name is Manish..."</span>
+                    <span class="try-chip">"I prefer short answers..."</span>
+                    <span class="try-chip">"What do you remember?"</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pipeline">
+                <div class="stage"><span>1 - Receive</span><b>raw turn</b></div>
+                <div class="stage"><span>2 - Retrieve</span><b>score memory</b></div>
+                <div class="stage"><span>3 - Generate</span><b>answer</b></div>
+                <div class="stage"><span>4 - Extract</span><b>mine facts</b></div>
+                <div class="stage"><span>5 - Write</span><b>commit</b></div>
+              </div>
+              <div class="composer">
+                <div class="input-box">Say something the agent should remember...</div>
+                <div class="send">Send</div>
+              </div>
+            </div>
+            <div class="mem-grid">
+              <div class="panel session">
+                <div class="panel-head"><span class="swatch" style="background: var(--session)"></span><h3>Session memory</h3><small>0</small></div>
+                <div class="panel-body"><p class="empty-note">Empty. Your next message lands here first: raw, verbatim, short-lived.</p></div>
+              </div>
+              <div class="panel episodic">
+                <div class="panel-head"><span class="swatch" style="background: var(--episodic)"></span><h3>Episodic memory</h3><small>0</small></div>
+                <div class="panel-body"><p class="empty-note">No episodes yet.</p></div>
+              </div>
+              <div class="panel semantic">
+                <div class="panel-head"><span class="swatch" style="background: var(--semantic)"></span><h3>Semantic memory</h3><small>0</small></div>
+                <div class="panel-body"><p class="empty-note">Nothing learned yet.</p></div>
+              </div>
+              <div class="panel contextual">
+                <div class="panel-head"><span class="swatch" style="background: var(--contextual)"></span><h3>Contextual memory</h3><small>0</small></div>
+                <div class="panel-body"><p class="empty-note">Nothing retrieved yet.</p></div>
+              </div>
+            </div>
+          </div>
+          <div class="logbar"><div class="log-title">memory bus - every read and write, as it happens</div></div>
+        </div>
+      </section>
+
+      <section id="s3" class="clip scene" data-start="7" data-duration="4.8" data-track-index="1">
+        <div class="stage-back"></div>
+        <div class="app-frame">
+          <div class="topbar">
+            <div class="brand">
+              <span class="mini-dots">
+                <i style="background: var(--session)"></i>
+                <i style="background: var(--episodic)"></i>
+                <i style="background: var(--semantic)"></i>
+                <i style="background: var(--contextual)"></i>
+              </span>
+              Memory Glassbox
+              <small>live trace</small>
+            </div>
+            <div class="spacer"></div>
+            <div class="mode">mode <span class="on">demo</span></div>
+            <div class="top-button">prompt x-ray</div>
+          </div>
+          <div class="workspace">
+            <div class="chat-col">
+              <div class="chat-scroll">
+                <div class="user-bubble">My name is Manish and I work as a data engineer.</div>
+                <div class="agent-bubble">Got it. The memory machinery around me is fully real: your message is scanned for facts, preferences, and skills.</div>
+              </div>
+              <div class="pipeline live-pipeline">
+                <div class="stage"><div class="stage-fill f1"></div><span>1 - Receive</span><b>message enters working memory</b></div>
+                <div class="stage"><div class="stage-fill f2"></div><span>2 - Retrieve</span><b>search long-term stores</b></div>
+                <div class="stage"><div class="stage-fill f3"></div><span>3 - Generate</span><b>compose reply</b></div>
+                <div class="stage"><div class="stage-fill f4"></div><span>4 - Extract</span><b>durable items found</b></div>
+                <div class="stage"><div class="stage-fill f5"></div><span>5 - Write</span><b>commit memories</b></div>
+              </div>
+              <div class="composer">
+                <div class="input-box"><span class="typed-text">My name is Manish and I work as a data engineer.</span></div>
+                <div class="send send-press">Send</div>
+              </div>
+            </div>
+            <div class="mem-grid ghost-grid">
+              <div class="panel session">
+                <div class="panel-head"><span class="swatch" style="background: var(--session)"></span><h3>Session memory</h3><small>1</small></div>
+                <div class="panel-body"><div class="memory-card visible-card"><span class="kind turn">you</span><p>My name is Manish and I work as a data engineer.</p></div></div>
+              </div>
+              <div class="panel episodic"><div class="panel-head"><span class="swatch" style="background: var(--episodic)"></span><h3>Episodic memory</h3><small>0</small></div><div class="panel-body"><p class="empty-note">waiting for write...</p></div></div>
+              <div class="panel semantic"><div class="panel-head"><span class="swatch" style="background: var(--semantic)"></span><h3>Semantic memory</h3><small>0</small></div><div class="panel-body"><p class="empty-note">extracting stable facts...</p></div></div>
+              <div class="panel contextual"><div class="panel-head"><span class="swatch" style="background: var(--contextual)"></span><h3>Contextual memory</h3><small>0</small></div><div class="panel-body"><p class="empty-note">retrieval checked the long-term pool.</p></div></div>
+            </div>
+          </div>
+          <div class="logbar"><div class="log-title">memory bus</div><div class="log-line s3-log">WRITE session - user turn, kept verbatim in the context window</div></div>
+        </div>
+      </section>
+
+      <section id="s4" class="clip scene" data-start="11.8" data-duration="5.1" data-track-index="1">
+        <div class="stage-back"></div>
+        <div class="app-frame">
+          <div class="topbar">
+            <div class="brand">
+              <span class="mini-dots">
+                <i style="background: var(--session)"></i>
+                <i style="background: var(--episodic)"></i>
+                <i style="background: var(--semantic)"></i>
+                <i style="background: var(--contextual)"></i>
+              </span>
+              Memory Glassbox
+              <small>writes made visible</small>
+            </div>
+            <div class="spacer"></div>
+            <div class="top-button">full trace</div>
+            <div class="top-button">insights</div>
+          </div>
+          <div class="workspace">
+            <div class="chat-col">
+              <div class="chat-scroll">
+                <div class="user-bubble">My name is Manish and I work as a data engineer.</div>
+                <div class="agent-bubble">Noted. I can now tailor future answers around those durable facts.</div>
+              </div>
+              <div class="pipeline">
+                <div class="stage"><div class="stage-fill done-fill"></div><span>1 - Receive</span><b>done</b></div>
+                <div class="stage"><div class="stage-fill done-fill"></div><span>2 - Retrieve</span><b>done</b></div>
+                <div class="stage"><div class="stage-fill done-fill"></div><span>3 - Generate</span><b>done</b></div>
+                <div class="stage"><div class="stage-fill done-fill"></div><span>4 - Extract</span><b>2 facts</b></div>
+                <div class="stage"><div class="stage-fill done-fill"></div><span>5 - Write</span><b>3 records</b></div>
+              </div>
+              <div class="composer">
+                <div class="input-box" data-layout-allow-overlap>Ask what the agent remembers next.</div>
+                <div class="send">Send</div>
+              </div>
+            </div>
+            <div class="mem-grid write-grid">
+              <div class="panel session">
+                <div class="panel-head"><span class="swatch" style="background: var(--session)"></span><h3>Session memory</h3><small>2</small></div>
+                <div class="panel-body">
+                  <div class="memory-card write-card c-session"><span class="kind turn">you</span><p>My name is Manish and I work as a data engineer.</p><small>raw turn - re-sent every request</small></div>
+                </div>
+              </div>
+              <div class="panel episodic">
+                <div class="panel-head"><span class="swatch" style="background: var(--episodic)"></span><h3>Episodic memory</h3><small>1</small></div>
+                <div class="panel-body">
+                  <div class="memory-card write-card c-episode"><span class="kind episode">episode</span><p>User introduced himself and the agent replied.</p><small>time-stamped event</small></div>
+                </div>
+              </div>
+              <div class="panel semantic">
+                <div class="panel-head"><span class="swatch" style="background: var(--semantic)"></span><h3>Semantic memory</h3><small>2</small></div>
+                <div class="panel-body">
+                  <div class="memory-card write-card c-fact-one"><span class="kind fact">fact</span><p>User's name is Manish.</p><small>stable identity fact</small></div>
+                  <div class="memory-card write-card c-fact-two"><span class="kind fact">fact</span><p>User works as a data engineer.</p><small>durable personal context</small></div>
+                </div>
+              </div>
+              <div class="panel contextual">
+                <div class="panel-head"><span class="swatch" style="background: var(--contextual)"></span><h3>Contextual memory</h3><small>score</small></div>
+                <div class="panel-body">
+                  <div class="memory-card write-card c-score"><span class="kind score">retrieval</span><p>Next recall: Manish + data engineer</p><small>matched terms are visible before prompt injection</small><div class="score-bar"><i class="score-fill"></i></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="logbar" data-layout-allow-overlap>
+            <div class="log-title">memory bus</div>
+            <div class="log-line l1"><b>WRITE</b> semantic/fact - User's name is Manish.</div>
+            <div class="log-line l2"><b>WRITE</b> semantic/fact - User works as a data engineer.</div>
+            <div class="log-line l3"><b>WRITE</b> episodic/episode - exchange journaled with source and reason.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="s5" class="clip scene" data-start="16.9" data-duration="4.6" data-track-index="1">
+        <div class="stage-back"></div>
+        <div class="app-frame last-frame">
+          <div class="topbar">
+            <div class="brand">
+              <span class="mini-dots">
+                <i style="background: var(--session)"></i>
+                <i style="background: var(--episodic)"></i>
+                <i style="background: var(--semantic)"></i>
+                <i style="background: var(--contextual)"></i>
+              </span>
+              Memory Glassbox
+              <small>provenance included</small>
+            </div>
+            <div class="spacer"></div>
+            <div class="top-button">prompt x-ray</div>
+            <div class="top-button">insights</div>
+          </div>
+          <div class="workspace">
+            <div class="chat-col">
+              <div class="chat-scroll">
+                <div class="hero-box">
+                  <h2>Every remembered fact has a receipt.</h2>
+                  <p>Source message, storage reason, retrieval score, edit history, and the exact prompt path.</p>
+                </div>
+              </div>
+              <div class="pipeline">
+                <div class="stage"><div class="stage-fill done-fill"></div><span>receive</span><b>visible</b></div>
+                <div class="stage"><div class="stage-fill done-fill"></div><span>retrieve</span><b>scored</b></div>
+                <div class="stage"><div class="stage-fill done-fill"></div><span>generate</span><b>x-rayed</b></div>
+                <div class="stage"><div class="stage-fill done-fill"></div><span>extract</span><b>explained</b></div>
+                <div class="stage"><div class="stage-fill done-fill"></div><span>write</span><b>audited</b></div>
+              </div>
+              <div class="composer">
+                <div class="input-box">What do you remember about me?</div>
+                <div class="send">Send</div>
+              </div>
+            </div>
+            <div class="mem-grid">
+              <div class="panel session"><div class="panel-head"><span class="swatch" style="background: var(--session)"></span><h3>Session memory</h3><small>context</small></div><div class="panel-body"><div class="memory-card visible-card"><span class="kind turn">turn</span><p>Raw conversation buffer.</p></div></div></div>
+              <div class="panel episodic"><div class="panel-head"><span class="swatch" style="background: var(--episodic)"></span><h3>Episodic memory</h3><small>events</small></div><div class="panel-body"><div class="memory-card visible-card"><span class="kind episode">episode</span><p>What happened, when.</p></div></div></div>
+              <div class="panel semantic"><div class="panel-head"><span class="swatch" style="background: var(--semantic)"></span><h3>Semantic memory</h3><small>facts</small></div><div class="panel-body"><div class="memory-card visible-card"><span class="kind fact">fact</span><p>User's name is Manish.</p></div></div></div>
+              <div class="panel contextual"><div class="panel-head"><span class="swatch" style="background: var(--contextual)"></span><h3>Contextual memory</h3><small>retrieval</small></div><div class="panel-body"><div class="memory-card visible-card"><span class="kind score">score 0.86</span><p>Why this memory was recalled.</p><div class="score-bar"><i style="width: 86%"></i></div></div></div></div>
+            </div>
+          </div>
+          <div class="drawer">
+            <h2>Semantic - fact</h2>
+            <div class="drawer-section"><h3>Stored memory</h3><p>User's name is Manish.</p></div>
+            <div class="drawer-section"><h3>Source message</h3><div class="quote">My name is Manish and I work as a data engineer.</div></div>
+            <div class="drawer-section"><h3>Why it was stored</h3><p>The message contains an explicit self-introduction, a stable identity fact worth keeping.</p></div>
+            <div class="drawer-section"><h3>Retrieval history</h3><p>Recalled when the next query asks what the agent remembers.</p></div>
+          </div>
+        </div>
+
+        <div class="final-card">
+          <div class="dot-row">
+            <i class="memory-dot d-session"></i>
+            <i class="memory-dot d-episodic"></i>
+            <i class="memory-dot d-semantic"></i>
+            <i class="memory-dot d-contextual"></i>
+          </div>
+          <h1>OpenMemoryUI</h1>
+          <p>Transparent agentic memory, ready to launch.</p>
+          <div class="store-row">
+            <div class="store-chip"><i style="background: var(--session)"></i>session</div>
+            <div class="store-chip"><i style="background: var(--episodic)"></i>episodic</div>
+            <div class="store-chip"><i style="background: var(--semantic)"></i>semantic</div>
+            <div class="store-chip"><i style="background: var(--contextual)"></i>contextual</div>
+          </div>
+        </div>
+        <div class="video-badge">Launch demo attached to the site</div>
+      </section>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.set(".scene", { opacity: 0 }, 0);
+      tl.set(".memory-card.visible-card", { opacity: 1 }, 0);
+      tl.set(".done-fill", { opacity: 1 }, 0);
+
+      function scene(id, start, duration) {
+        tl.set(id, { opacity: 1 }, start);
+        tl.fromTo(id, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45 }, start);
+      }
+
+      scene("#s1", 0, 3.2);
+      tl.fromTo("#s1 .memory-dot", { opacity: 0, scale: 0.35, y: 22 }, { opacity: 1, scale: 1, y: 0, duration: 0.26, stagger: 0.1 }, 0.42);
+      tl.fromTo("#s1 .hook-title", { opacity: 0, y: 42 }, { opacity: 1, y: 0, duration: 0.44 }, 1.05);
+      tl.fromTo("#s1 .hook-copy", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.38 }, 1.62);
+      tl.fromTo("#s1 .flow-pill", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.22, stagger: 0.08 }, 2.06);
+      tl.fromTo("#s1 .brand-chip", { opacity: 0, x: 38 }, { opacity: 1, x: 0, duration: 0.38 }, 1.28);
+
+      scene("#s2", 3.2, 3.8);
+      tl.fromTo("#s2 .app-frame", { opacity: 0, scale: 0.94, y: 46 }, { opacity: 1, scale: 1, y: 0, duration: 0.55 }, 3.58);
+      tl.fromTo("#s2 .hero-box", { opacity: 0, x: -34 }, { opacity: 1, x: 0, duration: 0.42 }, 4.02);
+      tl.fromTo("#s2 .panel", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.34, stagger: 0.1 }, 4.22);
+      tl.fromTo("#s2 .stage", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.24, stagger: 0.06 }, 4.86);
+      tl.fromTo("#s2 .try-chip", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.22, stagger: 0.08 }, 5.26);
+
+      scene("#s3", 7, 4.8);
+      tl.fromTo("#s3 .app-frame", { opacity: 0, scale: 0.98 }, { opacity: 1, scale: 1, duration: 0.32 }, 7.08);
+      tl.fromTo("#s3 .typed-text", { width: 0 }, { width: 540, duration: 0.62 }, 7.28);
+      tl.fromTo("#s3 .send-press", { scale: 1 }, { scale: 0.9, duration: 0.08 }, 7.9);
+      tl.to("#s3 .send-press", { scale: 1, duration: 0.12 }, 7.99);
+      tl.fromTo("#s3 .user-bubble", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3 }, 8.18);
+      tl.fromTo("#s3 .f1", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.16 }, 8.44);
+      tl.fromTo("#s3 .f2", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.16 }, 8.96);
+      tl.fromTo("#s3 .f3", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.16 }, 9.5);
+      tl.fromTo("#s3 .agent-bubble", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.34 }, 9.7);
+      tl.fromTo("#s3 .f4", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.16 }, 10.02);
+      tl.fromTo("#s3 .f5", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.16 }, 10.54);
+      tl.fromTo("#s3 .s3-log", { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.28 }, 10.82);
+
+      scene("#s4", 11.8, 5.1);
+      tl.fromTo("#s4 .app-frame", { opacity: 0, scale: 0.985 }, { opacity: 1, scale: 1, duration: 0.32 }, 11.9);
+      tl.fromTo("#s4 .write-card", { opacity: 0, y: 24, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, stagger: 0.18 }, 12.52);
+      tl.fromTo("#s4 .score-fill", { width: 0 }, { width: 420, duration: 0.58 }, 13.58);
+      tl.fromTo("#s4 .log-line", { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.22, stagger: 0.22 }, 14.12);
+
+      scene("#s5", 16.9, 4.6);
+      tl.fromTo("#s5 .last-frame", { opacity: 0, scale: 0.985 }, { opacity: 1, scale: 1, duration: 0.36 }, 17);
+      tl.fromTo("#s5 .drawer", { x: 560 }, { x: 0, duration: 0.48 }, 17.36);
+      tl.fromTo("#s5 .drawer-section", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.25, stagger: 0.12 }, 17.82);
+      tl.to("#s5 .last-frame", { opacity: 0, duration: 0.34 }, 18.48);
+      tl.fromTo("#s5 .final-card", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.42 }, 18.74);
+      tl.fromTo("#s5 .final-card .memory-dot", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.2, stagger: 0.07 }, 18.9);
+      tl.fromTo("#s5 .store-chip", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.22, stagger: 0.08 }, 19.54);
+      tl.fromTo("#s5 .video-badge", { opacity: 0, x: 24 }, { opacity: 1, x: 0, duration: 0.32 }, 20.18);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
