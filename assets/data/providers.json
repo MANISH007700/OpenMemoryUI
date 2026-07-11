@@ -1,0 +1,42 @@
+{
+  "defaultModels": {
+    "openrouter": "nvidia/nemotron-3-super-120b-a12b:free",
+    "anthropic": "claude-sonnet-5",
+    "openai": "gpt-4o-mini"
+  },
+  "fallbackModels": [
+    "nvidia/nemotron-3-super-120b-a12b:free",
+    "google/gemma-4-31b-it:free",
+    "qwen/qwen3-next-80b-a3b-instruct:free",
+    "openai/gpt-oss-120b:free",
+    "meta-llama/llama-3.3-70b-instruct:free"
+  ],
+  "providers": {
+    "openrouter": {
+      "label": "OpenRouter",
+      "keyPlaceholder": "sk-or-v1-...",
+      "keyUrl": "https://openrouter.ai/settings/keys",
+      "needsKeyForModels": false,
+      "browseUrl": "https://openrouter.ai/models"
+    },
+    "anthropic": {
+      "label": "Anthropic",
+      "keyPlaceholder": "sk-ant-...",
+      "keyUrl": "https://console.anthropic.com/settings/keys",
+      "needsKeyForModels": true,
+      "staticModels": [
+        "claude-opus-4-8",
+        "claude-sonnet-5",
+        "claude-sonnet-4-6",
+        "claude-haiku-4-5"
+      ]
+    },
+    "openai": {
+      "label": "OpenAI",
+      "keyPlaceholder": "sk-...",
+      "keyUrl": "https://platform.openai.com/api-keys",
+      "needsKeyForModels": true,
+      "staticModels": ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini"]
+    }
+  }
+}

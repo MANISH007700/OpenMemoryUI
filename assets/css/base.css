@@ -1,0 +1,67 @@
+/* Design tokens + element reset. Framework-free for Netlify static hosting. */
+:root {
+  --ink: #0d141f;
+  --ink-2: #121b29;
+  --panel: #17222f;
+  --panel-2: #1d2a3a;
+  --line: #263548;
+  --text: #e8eef5;
+  --muted: #8ca0b3;
+  --faint: #5c7183;
+  --session: #6fd3ff;
+  --episodic: #ffb454;
+  --semantic: #a78bfa;
+  --contextual: #57e6c4;
+  --write: #ffb454;
+  --danger: #f87693;
+  --radius: 10px;
+  --mono: "Spline Sans Mono", ui-monospace, monospace;
+  --body: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html,
+body {
+  height: 100%;
+  overflow-x: hidden;
+}
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 14.5px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "session": {
+    "title": "Session memory (working memory)",
+    "sections": [
+      {
+        "heading": "What it is",
+        "html": "<p>The model's short-term attention: the context window. Every turn you see here is re-sent to the LLM <b>verbatim, on every single request</b>. Nothing here is \"learned\" - it is literally pasted into the prompt each time.</p>"
+      },
+      {
+        "heading": "Why it exists",
+        "html": "<p class=\"dim\">LLMs are stateless. Between two API calls the model remembers nothing. The illusion of a continuous conversation is created by replaying this buffer.</p>"
+      },
+      {
+        "heading": "Its fatal flaw",
+        "html": "<p class=\"dim\">It is finite (watch the token bar fill) and volatile - close the session and it is gone. That is exactly why the other three memory systems exist: they are the agent's way of saving what matters before this buffer dies.</p>"
+      },
+      {
+        "heading": "Try it",
+        "html": "<p class=\"dim\">Press \"end session\" in the top bar and watch the buffer get compressed into a single episodic memory before being wiped.</p>"
+      }
+    ]
+  },
+  "episodic": {
+    "title": "Episodic memory",
+    "sections": [
+      {
+        "heading": "What it is",
+        "html": "<p>A diary of <b>events</b>: time-stamped records of what happened in each exchange - who said what, when, and how important it felt. Like your own memory of \"that conversation last Tuesday\".</p>"
+      },
+      {
+        "heading": "How it gets written",
+        "html": "<p class=\"dim\">After every reply, the extraction stage summarizes the exchange into one episode. When a session ends, the whole conversation is consolidated into a single richer episode - that mirrors what happens in humans during sleep.</p>"
+      },
+      {
+        "heading": "How it gets read",
+        "html": "<p class=\"dim\">When a new message resembles a past event, retrieval pulls the episode into contextual memory, so the agent can say \"last time we talked about X...\".</p>"
+      },
+      {
+        "heading": "Episodic vs semantic",
+        "html": "<p class=\"dim\">Episodic remembers <i>that Tuesday you mentioned Rust</i>. Semantic remembers <i>you are learning Rust</i> - the event stripped away, only the knowledge kept.</p>"
+      }
+    ]
+  },
+  "semantic": {
+    "title": "Semantic memory",
+    "sections": [
+      {
+        "heading": "What it is",
+        "html": "<p>Distilled knowledge about you: stable <b>facts</b> (name, job, location), <b>preferences</b> (tastes, working style), and <b>skills</b> (what you know or are learning). The original sentence is thrown away; only the meaning survives.</p>"
+      },
+      {
+        "heading": "How it gets written",
+        "html": "<p class=\"dim\">Stage 4 of the pipeline runs an extraction pass over every exchange asking: \"is there anything durable and reusable here?\". Chit-chat is rejected; identity, preference and capability statements are kept, each with a recorded reason.</p>"
+      },
+      {
+        "heading": "How it gets updated",
+        "html": "<p class=\"dim\">New statements that contradict or refine an old memory <b>update it in place</b> instead of duplicating it - say \"actually I prefer long answers now\" and watch the preference item change, keeping its full edit history.</p>"
+      },
+      {
+        "heading": "Why it matters",
+        "html": "<p class=\"dim\">This store is what makes an agent feel like it knows you across sessions. It survives \"end session\" and even a browser restart (it lives in localStorage).</p>"
+      }
+    ]
+  },
+  "contextual": {
+    "title": "Contextual memory (retrieval)",
+    "sections": [
+      {
+        "heading": "What it is",
+        "html": "<p>Not a store - a <b>spotlight</b>. For every message you send, the agent searches its episodic + semantic stores, scores every memory for relevance, and injects only the winners into the prompt. This panel shows exactly what was recalled for the last message, and why.</p>"
+      },
+      {
+        "heading": "How scoring works here",
+        "html": "<p class=\"dim\">This demo uses transparent lexical scoring: word overlap between your message and each memory, normalized by memory length, plus a recency boost, a reinforcement boost (often-recalled memories score higher), and an importance boost. Production systems use embedding vectors instead - same idea, fuzzier matching.</p>"
+      },
+      {
+        "heading": "Why not inject everything?",
+        "html": "<p class=\"dim\">The context window is small and expensive (watch the blue token bar). Retrieval is the art of spending those tokens only on memories that will actually improve this specific answer.</p>"
+      },
+      {
+        "heading": "See it yourself",
+        "html": "<p class=\"dim\">Each retrieved card shows its score, which of your words matched, and glows teal in its home panel at the moment of recall. Press \"prompt x-ray\" to see the retrieved memories sitting inside the real prompt.</p>"
+      }
+    ]
+  }
+}

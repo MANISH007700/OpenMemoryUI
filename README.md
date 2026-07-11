@@ -28,12 +28,48 @@ Click the `?` on any panel for a plain-language explainer of that memory type.
 
 ## Running it
 
-OpenMemoryUI is a plain static app: `index.html` loads `assets/css/app.css` and
-`assets/js/app.js`. There is no framework, bundler, backend, or build step.
+OpenMemoryUI is a plain static app built from native ES modules.
+There is no framework, bundler, backend, or build step.
 
-Open it in a browser, or serve the repository root from any static host.
-Netlify can publish this repo directly from the root; `netlify.toml` pins that
-static publish setup.
+Serve the repository root from any static file server and open `index.html`:
+
+```sh
+python3 -m http.server 8000
+# then open http://localhost:8000
+```
+
+A server is needed because the browser blocks ES module imports and JSON fetches over `file://`.
+Netlify publishes this repo directly from the root; `netlify.toml` pins that static publish setup.
+
+### Project structure
+
+```
+index.html                  page shell (panels, top bar, drawer skeleton)
+assets/css/
+  base.css                  design tokens, reset, scrollbars
+  layout.css                app frame: top bar, grids, pipeline strip, log shell
+  components.css            chat bubbles, chips, memory cards, hero, packets
+  drawer.css                provenance drawer, insights funnels, charts, trace
+assets/data/
+  providers.json            LLM provider catalog, default + fallback models
+  explainers.json           panel explainer copy shown in the drawer
+assets/js/
+  main.js                   entry point: event wiring and boot
+  config.js                 constants; loads the JSON data files
+  state.js                  memory/settings/runtime state + localStorage persistence
+  retrieval.js              lexical scoring, tokenization, recall detection
+  demo.js                   demo-mode brain: regex extraction + canned replies
+  llm.js                    live-mode provider calls, model catalogs, prompts
+  pipeline.js               the 5-stage send flow, consolidation, wipe
+  ui/render.js              the four memory panels + budget bar
+  ui/chat.js                chat bubbles and provenance chips
+  ui/drawer.js              item/session/x-ray/onboarding drawer views
+  ui/insights.js            insights analytics + per-turn trace views
+  ui/settings.js            mode, provider, key validation, model dropdown
+  ui/effects.js             pipeline stages, packets, flash animations
+  ui/log.js                 the memory-bus log
+  utils.js                  DOM shorthands, escaping, formatting
+```
 
 ### Demo mode (default, zero setup)
 

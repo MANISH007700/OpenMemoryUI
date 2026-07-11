@@ -1,0 +1,360 @@
+/* Reusable pieces: chat messages, chips, memory item cards, budget bar,
+   log lines, flying packets, and the welcome hero. */
+
+/* chat messages */
+.msg {
+  max-width: 88%;
+}
+.msg .who {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 4px;
+}
+.msg .bubble {
+  padding: 10px 13px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg.user {
+  align-self: flex-end;
+  text-align: right;
+}
+.msg.user .bubble {
+  background: #23415a;
+  border: 1px solid #2f5578;
+  text-align: left;
+}
+.msg.agent {
+  align-self: flex-start;
+}
+.msg.agent .bubble {
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.msg.system-note {
+  align-self: center;
+  max-width: 100%;
+}
+.msg.system-note .bubble {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+.msg .meta-chips {
+  margin-top: 6px;
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.msg.user .meta-chips {
+  justify-content: flex-end;
+}
+.chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--ink);
+  cursor: pointer;
+}
+.chip:hover {
+  color: var(--text);
+}
+.chip.w-session {
+  border-color: var(--session);
+  color: var(--session);
+}
+.chip.w-episodic {
+  border-color: var(--episodic);
+  color: var(--episodic);
+}
+.chip.w-semantic {
+  border-color: var(--semantic);
+  color: var(--semantic);
+}
+.chip.w-contextual {
+  border-color: var(--contextual);
+  color: var(--contextual);
+}
+
+/* memory items */
+.mem-item {
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+  position: relative;
+}
+.mem-item:hover {
+  border-color: var(--faint);
+  transform: translateX(2px);
+}
+.mem-item .mi-top {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 2px;
+  flex-wrap: wrap;
+}
+.mem-item .kind {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex: none;
+}
+.kind.fact {
+  background: rgba(167, 139, 250, 0.15);
+  color: var(--semantic);
+}
+.kind.preference {
+  background: rgba(248, 118, 147, 0.14);
+  color: var(--danger);
+}
+.kind.skill {
+  background: rgba(111, 211, 255, 0.13);
+  color: var(--session);
+}
+.kind.episode {
+  background: rgba(255, 180, 84, 0.14);
+  color: var(--episodic);
+}
+.kind.turn-user {
+  background: rgba(111, 211, 255, 0.13);
+  color: var(--session);
+}
+.kind.turn-agent {
+  background: rgba(140, 160, 179, 0.14);
+  color: var(--muted);
+}
+.mem-item .mi-when {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--faint);
+  margin-left: auto;
+}
+.mem-item .mi-content {
+  font-size: 13px;
+  word-break: break-word;
+}
+.mem-item .mi-foot {
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--faint);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mem-item.just-written {
+  animation: writeflash 1.6s ease-out;
+}
+@keyframes writeflash {
+  0% {
+    border-color: var(--write);
+    background: rgba(255, 180, 84, 0.16);
+  }
+  100% {
+    border-color: var(--line);
+    background: var(--ink-2);
+  }
+}
+.mem-item.just-updated {
+  animation: updateflash 1.6s ease-out;
+}
+@keyframes updateflash {
+  0% {
+    border-color: var(--semantic);
+    background: rgba(167, 139, 250, 0.16);
+  }
+  100% {
+    border-color: var(--line);
+    background: var(--ink-2);
+  }
+}
+.mem-item.just-retrieved {
+  animation: readflash 1.6s ease-out;
+}
+@keyframes readflash {
+  0% {
+    border-color: var(--contextual);
+    background: rgba(87, 230, 196, 0.14);
+  }
+  100% {
+    border-color: var(--line);
+    background: var(--ink-2);
+  }
+}
+.score-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line);
+  margin-top: 5px;
+  overflow: hidden;
+}
+.score-bar i {
+  display: block;
+  height: 100%;
+  background: var(--contextual);
+}
+
+/* session budget bar */
+#budgetWrap {
+  padding: 6px 12px 9px;
+  flex: none;
+  border-top: 1px solid var(--line);
+}
+#budgetWrap .b-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--faint);
+  margin-bottom: 4px;
+}
+#budgetBar {
+  height: 5px;
+  background: var(--ink);
+  border-radius: 3px;
+  overflow: hidden;
+}
+#budgetBar i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--session);
+  transition: width 0.4s;
+}
+
+/* log lines */
+.log-line {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.log-line b {
+  font-weight: 600;
+}
+.log-line .t {
+  color: var(--faint);
+}
+.log-line.op-write b {
+  color: var(--write);
+}
+.log-line.op-update b {
+  color: var(--semantic);
+}
+.log-line.op-read b {
+  color: var(--contextual);
+}
+.log-line.op-info b {
+  color: var(--session);
+}
+.log-line.op-error b {
+  color: var(--danger);
+}
+.log-line a {
+  color: inherit;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+
+/* packets (the memory bus) */
+.packet {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 400;
+}
+
+/* welcome hero inside chat */
+.hero {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  background:
+    radial-gradient(
+      600px 200px at 20% 0%,
+      rgba(87, 230, 196, 0.07),
+      transparent
+    ),
+    radial-gradient(
+      500px 220px at 90% 100%,
+      rgba(167, 139, 250, 0.08),
+      transparent
+    ),
+    var(--panel);
+}
+.hero h1 {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--contextual);
+}
+.hero p {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin-bottom: 10px;
+}
+.hero .try {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hero .try button {
+  background: var(--ink);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+}
+.hero .try button:hover {
+  color: var(--text);
+  border-color: var(--contextual);
+}
+.launch-demo {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--ink);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.launch-demo video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--ink);
+}
+.launch-demo .caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+}
