@@ -40,3 +40,46 @@ export function addChipsTo(msgEl, chips) {
 export function clearHero() {
   $("#hero")?.remove();
 }
+
+/* The orchestrator card: shows the planner's decision and each tool agent
+   working in real time during the Act stage. */
+export function addAgentActivity(calls) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg orchestrator";
+  wrap.innerHTML = `
+    <div class="who">orchestrator</div>
+    <div class="orch">
+      <div class="orch-row"><span class="o-icon">🧭</span><b>planner</b>
+        <span class="o-note">routed to ${calls.length} tool agent(s)</span>
+        <span class="o-status done">✓</span></div>
+      ${calls
+        .map(
+          (c, i) => `
+      <div class="orch-row" data-call="${i}">
+        <span class="o-icon">🛠</span><b>${esc(c.tool)}</b>
+        <span class="o-note">${esc(
+          Object.values(c.args || {})
+            .join(", ")
+            .slice(0, 60),
+        )}</span>
+        <span class="o-status pending">queued</span>
+        <div class="o-result"></div>
+      </div>`,
+        )
+        .join("")}
+    </div>`;
+  $("#chatScroll").appendChild(wrap);
+  $("#chatScroll").scrollTop = $("#chatScroll").scrollHeight;
+  return wrap;
+}
+
+export function setActivity(el, i, status, text) {
+  const row = $(`[data-call="${i}"]`, el);
+  if (!row) return;
+  const st = $(".o-status", row);
+  st.className = `o-status ${status}`;
+  st.textContent =
+    status === "running" ? "running…" : status === "done" ? "✓" : "✗ failed";
+  if (text) $(".o-result", row).textContent = text;
+  $("#chatScroll").scrollTop = $("#chatScroll").scrollHeight;
+}

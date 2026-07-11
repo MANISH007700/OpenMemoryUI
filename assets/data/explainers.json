@@ -50,7 +50,7 @@
       },
       {
         "heading": "How it gets written",
-        "html": "<p class=\"dim\">Stage 4 of the pipeline runs an extraction pass over every exchange asking: \"is there anything durable and reusable here?\". Chit-chat is rejected; identity, preference and capability statements are kept, each with a recorded reason.</p>"
+        "html": "<p class=\"dim\">Stage 5 of the pipeline runs an extraction pass over every exchange asking: \"is there anything durable and reusable here?\". Chit-chat is rejected; identity, preference and capability statements are kept, each with a recorded reason.</p>"
       },
       {
         "heading": "How it gets updated",

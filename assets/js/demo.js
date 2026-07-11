@@ -102,8 +102,20 @@ export function demoExtract(userMsg) {
   return { items: kept, dupesRejected: out.length - kept.length };
 }
 
-export function demoReply(userMsg, retrieved) {
+export function demoReply(userMsg, retrieved, toolResults = []) {
   const sem = retrieved.filter((r) => r.item.type === "semantic");
+  if (toolResults.length && !isRecallQuery(userMsg)) {
+    const ok = toolResults.filter((r) => r.ok);
+    const bad = toolResults.filter((r) => !r.ok);
+    let reply = ok.map((r) => r.summary).join("\n\n");
+    if (bad.length)
+      reply +=
+        (reply ? "\n\n" : "") +
+        bad.map((r) => `(${r.tool} failed: ${r.error})`).join("\n");
+    reply +=
+      "\n\nThat answer came from the Act stage: real tool calls made straight from your browser seconds ago. The orchestrator card above shows each agent's work, and it is all recorded in this turn's trace.";
+    return reply.trim();
+  }
   if (isRecallQuery(userMsg)) {
     if (!sem.length)
       return "Honestly? Nothing yet. My semantic store is empty, so I have no facts, preferences or skills on file about you. Tell me something about yourself and watch the violet panel on the right.";

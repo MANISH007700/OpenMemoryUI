@@ -16,7 +16,7 @@
     />
     <meta
       property="og:description"
-      content="Talk to an agent whose memory is a glass box: every message is traced live through receive → retrieve → generate → extract → write."
+      content="Talk to an agent whose memory is a glass box: every message is traced live through receive → retrieve → act → generate → extract → write, with 20+ real-world tools."
     />
     <meta
       property="og:image"
@@ -29,7 +29,7 @@
     />
     <meta
       name="twitter:description"
-      content="Talk to an agent whose memory is a glass box: every message is traced live through a real 5-stage memory pipeline."
+      content="Talk to an agent whose memory is a glass box: every message is traced live through receive → retrieve → act → generate → extract → write."
     />
     <meta
       name="twitter:image"
@@ -109,6 +109,13 @@
         </div>
         <button
           class="tbtn"
+          id="toolboxBtn"
+          title="Every real-world tool the agent can call during the Act stage, plus the MCP connector"
+        >
+          toolbox
+        </button>
+        <button
+          class="tbtn"
           id="insightsBtn"
           title="Funnels, graphs and a keyword map of everything happening in memory"
         >
@@ -156,6 +163,13 @@
           hidden
         />
         <button
+          class="tbtn"
+          id="soundBtn"
+          title="Synthesized sound: a soft ambient pad plus blips for every memory read, write and tool call"
+        >
+          🔇 sound
+        </button>
+        <button
           class="tbtn danger"
           id="wipeBtn"
           title="Erase every stored memory"
@@ -184,16 +198,21 @@
               <h1>Talk to an agent whose memory is a <em>glass box</em>.</h1>
               <p>
                 Every message you send is traced through a real memory pipeline:
-                it enters working memory, triggers retrieval, gets answered, and
-                is then mined for facts, preferences and skills. Watch the
-                panels on the right light up as it happens. Click any stored
-                memory to see exactly why and how it was written.
+                it enters working memory, triggers retrieval, can call 20+
+                real-world tools (weather, Wikipedia, prices, your own MCP
+                servers...), gets answered, and is then mined for facts,
+                preferences and skills. Watch the panels light up as it happens.
+                Click any stored memory to see exactly why and how it was
+                written.
               </p>
               <div class="try">
                 <button
-                  data-fill="Hi! My name is Manish and I work as a data engineer at UsefulBI."
+                  data-fill="Hi! My name is Manish and I work as an independent data engineer."
                 >
                   "My name is Manish, I'm a data engineer..."
+                </button>
+                <button data-fill="tool search weather">
+                  "tool search weather" 🛠
                 </button>
                 <button
                   data-fill="I prefer short answers with bullet points, and I love dark roast coffee."
@@ -205,6 +224,9 @@
                 >
                   "I'm learning Rust..."
                 </button>
+                <button data-fill="What's the weather in Delhi right now?">
+                  "What's the weather in Delhi?" 🛠
+                </button>
                 <button data-fill="What do you remember about me so far?">
                   "What do you remember about me?"
                 </button>
@@ -212,7 +234,7 @@
             </div>
           </div>
 
-          <div id="pipeline" title="The five stages every message goes through">
+          <div id="pipeline" title="The six stages every message goes through">
             <div class="stage" data-stage="receive">
               <span class="s-name"><i></i>1 · Receive</span>
               <span class="s-note"></span>
@@ -221,16 +243,20 @@
               <span class="s-name"><i></i>2 · Retrieve</span>
               <span class="s-note"></span>
             </div>
+            <div class="stage" data-stage="act">
+              <span class="s-name"><i></i>3 · Act</span>
+              <span class="s-note"></span>
+            </div>
             <div class="stage" data-stage="generate">
-              <span class="s-name"><i></i>3 · Generate</span>
+              <span class="s-name"><i></i>4 · Generate</span>
               <span class="s-note"></span>
             </div>
             <div class="stage" data-stage="extract">
-              <span class="s-name"><i></i>4 · Extract</span>
+              <span class="s-name"><i></i>5 · Extract</span>
               <span class="s-note"></span>
             </div>
             <div class="stage" data-stage="write">
-              <span class="s-name"><i></i>5 · Write</span>
+              <span class="s-name"><i></i>6 · Write</span>
               <span class="s-note"></span>
             </div>
           </div>
@@ -357,6 +383,12 @@
           <i></i> memory bus · every read and write, as it happens
           <span class="spacer"></span>
           <button
+            id="dbBtn"
+            title="How much browser storage the glassbox is using - click to see what fills up and what gets deleted"
+          >
+            db <span id="dbSize"></span>
+          </button>
+          <button
             id="clapBtn"
             title="Enjoying the glassbox? Send a clap!"
             aria-label="Send a clap to show you like this project"
@@ -366,7 +398,7 @@
           <span class="credit"
             >built with ♥ by
             <a
-              href="https://manish-luci.netlify.app"
+              href="https://github.com/MANISH007700"
               target="_blank"
               rel="noopener"
               >Manish Sharma</a
@@ -399,8 +431,8 @@
         <div class="w-analytics" id="welcomeAnalytics"></div>
         <footer class="w-foot">
           <span class="w-hint"
-            >demo mode needs no key · switch to live to chat with a real LLM
-            using your own key</span
+            >demo mode needs no key · live mode uses your own LLM key · 20+
+            real-world tools in the toolbox</span
           >
           <button id="welcomeStart">Start chatting →</button>
         </footer>

@@ -267,6 +267,9 @@
 .log-line.op-error b {
   color: var(--danger);
 }
+.log-line.op-tool b {
+  color: #ffd166;
+}
 .log-line a {
   color: inherit;
   text-decoration: underline dotted;
@@ -281,6 +284,69 @@
   border-radius: 50%;
   pointer-events: none;
   z-index: 400;
+}
+
+/* orchestrator card: planner + tool agents working during the Act stage */
+.msg.orchestrator {
+  align-self: stretch;
+  max-width: 100%;
+}
+.orch {
+  border: 1px dashed #ffd16655;
+  border-radius: 10px;
+  background: var(--ink);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.orch-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+}
+.orch-row .o-icon {
+  flex: none;
+}
+.orch-row b {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #ffd166;
+}
+.orch-row .o-note {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40%;
+}
+.orch-row .o-status {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+.o-status.pending {
+  color: var(--faint);
+}
+.o-status.running {
+  color: var(--session);
+}
+.o-status.done {
+  color: var(--contextual);
+}
+.o-status.fail {
+  color: var(--danger);
+}
+.orch-row .o-result {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 12px;
+  padding-left: 24px;
+  word-break: break-word;
 }
 
 /* flying keywords: the words that got pulled, fading into a dot as they land */
@@ -317,8 +383,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 18px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       600px 200px at 20% 0%,
       rgba(87, 230, 196, 0.07),
       transparent

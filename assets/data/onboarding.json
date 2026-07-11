@@ -33,8 +33,13 @@
       "hood": "word overlap ÷ length + recency + reinforcement + importance"
     }
   ],
-  "pipeline": ["Receive", "Retrieve", "Generate", "Extract", "Write"],
+  "pipeline": ["Receive", "Retrieve", "Act", "Generate", "Extract", "Write"],
   "analytics": [
+    {
+      "name": "toolbox",
+      "when": "stage 3 · act",
+      "what": "20+ free real-world tools (weather, Wikipedia, prices, translation...) plus your own MCP servers - a planner routes to them and an orchestrator card shows every call."
+    },
     {
       "name": "insights",
       "when": "after a few messages",

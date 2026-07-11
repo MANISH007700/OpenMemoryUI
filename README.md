@@ -20,8 +20,8 @@ The agent's memory is split into four stores, each rendered as a live panel:
 | **Semantic memory**   | Distilled facts, preferences, and skills extracted from what you say                              | Persistent (localStorage) |
 | **Contextual memory** | The retrieval spotlight: which memories were recalled for the last message, with relevance scores | Recomputed every turn     |
 
-Every message runs through a visible five-stage pipeline: **Receive → Retrieve → Generate → Extract → Write**.
-Animated packets fly from your message into whichever store it lands in, and the memory-bus log at the bottom records every read and write.
+Every message runs through a visible six-stage pipeline: **Receive → Retrieve → Act → Generate → Extract → Write**.
+Animated keywords fly from your message into whichever store uses them, and the memory-bus log at the bottom records every read, tool call, write, deletion, and consolidation.
 
 Click any stored memory to open its provenance drawer: the exact source message, the reason it was stored, its edit history, and its full retrieval history.
 Click the `?` on any panel for a plain-language explainer of that memory type.
@@ -62,7 +62,9 @@ assets/js/
   retrieval.js              lexical scoring, tokenization, recall detection
   demo.js                   demo-mode brain: regex extraction + canned replies
   llm.js                    live-mode provider calls, model catalogs, prompts
-  pipeline.js               the 5-stage send flow, consolidation, wipe
+  tools.js                  20+ free browser-callable tools + demo/live planners
+  mcp.js                    Streamable HTTP MCP client + server presets
+  pipeline.js               the 6-stage send flow, consolidation, wipe
   ui/render.js              the four memory panels + budget bar
   ui/chat.js                chat bubbles and provenance chips
   ui/drawer.js              item/session/x-ray drawer views
@@ -70,9 +72,23 @@ assets/js/
   ui/insights.js            insights analytics + per-turn trace views
   ui/settings.js            mode, provider, key validation, model dropdown
   ui/effects.js             pipeline stages, packets, flash animations
+  ui/toolbox.js             searchable toolbox + MCP connector drawer
+  ui/storage.js             localStorage fill/delete meter
+  ui/sound.js               synthesized ambient pad and event sounds
   ui/log.js                 the memory-bus log
   utils.js                  DOM shorthands, escaping, formatting
 ```
+
+## Tool + MCP orchestration
+
+The **Act** stage gives the app a real toolbox while staying static-host friendly.
+Demo mode uses a transparent router; live mode can ask the selected LLM to plan tool calls.
+
+Built-in free tools include live weather, air quality, local time, geocoding, Wikipedia, dictionary, translation, currency conversion, crypto prices, country facts, GitHub repo stats, Hacker News headlines, trivia, jokes, quotes, calculator, unit conversion, random values, UUIDs, SHA-256, text stats, `tool_search`, and `tool_map`.
+
+The toolbox drawer is searchable, every tool has a try prompt, and every tool call is recorded in the orchestrator card, the memory bus, Insights, and the per-turn trace.
+
+For external systems, the app includes a browser MCP client for **Streamable HTTP** MCP servers. Paste a remote MCP URL in the toolbox to add its tools at runtime; presets in the drawer show useful server types such as browser automation, GitHub, filesystem, database, search/RAG, and calendar/tasks.
 
 ### Demo mode (default, zero setup)
 
@@ -103,13 +119,15 @@ A "how it works" onboarding opens on first visit and stays available from the to
 ## Extras worth trying
 
 - **insights**: funnels for your last turn (long-term pool → scored → injected into the prompt; extraction candidates → written vs rejected), a cumulative memory-growth chart, writes by kind, most-recalled memories, and a keyword map showing which words ended up in which store and which ones triggered retrievals.
-- **full trace**: every message you send gets a "full trace" chip that replays that turn step by step - tokenization (with dropped stopwords), every retrieval candidate's score including the rejects, the exact prompt, latency, the raw extraction output, and every write with its destination.
+- **full trace**: every message you send gets a "full trace" chip that replays that turn step by step - tokenization (with dropped stopwords), every retrieval candidate's score including the rejects, Act-stage tool calls, the exact prompt, latency, the raw extraction output, and every write with its destination.
 - **prompt x-ray**: see the exact messages array sent to the model on the last turn, with retrieved memories injected into the system prompt.
 - **end session**: watch working memory get consolidated into a single episodic summary before being wiped, the way real agents survive context-window limits.
 - Say "actually, I prefer..." to watch a semantic memory get updated in place, keeping its edit history.
 - Ask "what do you remember about me?" to trigger a recall-all retrieval.
 - **export / import**: download every stored memory as one readable JSON file, and restore it later or on another machine. The glassbox promise extends to portability.
 - **forget this memory**: every memory's provenance drawer has a forget button - the agent genuinely no longer knows it afterwards.
+- **db meter**: click the footer storage meter to see what is filling localStorage and exactly what deletes from it.
+- **sound**: optional synthesized music and event sounds, off by default until you toggle it.
 - Press `/` anywhere to jump to the composer.
 
 ## How memory works here (the honest version)
@@ -120,5 +138,5 @@ A "how it works" onboarding opens on first visit and stays available from the to
 
 ---
 
-Built with ♥ by [Manish Sharma](https://manish-luci.netlify.app).
+Built with ♥ by [Manish Sharma](https://github.com/MANISH007700).
 If the glassbox made memory click for you, hit the 👏 button in the app footer.

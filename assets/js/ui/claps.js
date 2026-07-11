@@ -4,6 +4,7 @@
 
 import { $ } from "../utils.js";
 import { logEvent } from "./log.js";
+import { sfx } from "./sound.js";
 
 const COUNTER_URL = "https://abacus.jasoncameron.dev";
 const COUNTER_PATH = "openmemoryui/claps";
@@ -64,6 +65,7 @@ export async function clap() {
   if (globalCount !== null) globalCount++; // optimistic bump
   renderCount();
   floatEmoji();
+  sfx.clap();
   if (myClaps === 1)
     logEvent(
       "info",

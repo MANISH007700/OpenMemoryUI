@@ -446,6 +446,7 @@
 #logbar .credit a:hover {
   color: var(--contextual);
 }
+#dbBtn,
 #clapBtn {
   background: transparent;
   border: 1px solid var(--line);
@@ -465,6 +466,10 @@
 #clapBtn:hover {
   color: var(--danger);
   border-color: var(--danger);
+}
+#dbBtn:hover {
+  color: var(--contextual);
+  border-color: var(--contextual);
 }
 #clapBtn.pop {
   animation: clappop 0.3s ease-out;

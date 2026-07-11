@@ -1,5 +1,5 @@
-/* The 5-stage memory pipeline every message goes through
-   (receive → retrieve → generate → extract → write), plus session
+/* The 6-stage memory pipeline every message goes through
+   (receive → retrieve → act → generate → extract → write), plus session
    consolidation and the full wipe. */
 
 import { PROVIDERS, TRACE_CAP, TOKEN_BUDGET } from "./config.js";
@@ -17,6 +17,8 @@ import {
 import { $, esc, sleep, now, uid, estTokens, fmtTime } from "./utils.js";
 import { retrieve, isRecallQuery, tokenize } from "./retrieval.js";
 import { demoExtract, demoReply } from "./demo.js";
+import { plan, runTool } from "./tools.js";
+import { sfx } from "./ui/sound.js";
 import {
   callLLM,
   extractLive,
@@ -35,7 +37,13 @@ import {
   flashPanel,
   flashCard,
 } from "./ui/effects.js";
-import { addChatMsg, addChipsTo, clearHero } from "./ui/chat.js";
+import {
+  addChatMsg,
+  addChipsTo,
+  clearHero,
+  addAgentActivity,
+  setActivity,
+} from "./ui/chat.js";
 import {
   renderAll,
   renderSession,
@@ -52,7 +60,7 @@ function jumpedWords(sourceMsg, content) {
   return shared.length ? shared.slice(0, 3) : tokenize(content).slice(0, 3);
 }
 
-/* Commit the extractor's output to the long-term stores (stage 5). */
+/* Commit the extractor's output to the long-term stores (stage 6). */
 function applyExtraction(result, sourceMsg, userMsgEl) {
   const written = [];
   let invalidRejected = 0;
@@ -137,6 +145,7 @@ function applyExtraction(result, sourceMsg, userMsgEl) {
     });
   }
   if (userMsgEl) addChipsTo(userMsgEl, chips);
+  if (written.length) sfx.write();
   persistMemory();
   return { written, invalidRejected };
 }
@@ -159,6 +168,7 @@ export async function handleSend() {
   input.value = "";
   clearHero();
   resetStages();
+  sfx.send();
 
   /* 1 · RECEIVE - into session (working) memory */
   setStage("receive", "message enters working memory, verbatim");
@@ -204,6 +214,7 @@ export async function handleSend() {
 
   /* 2 · RETRIEVE - search long-term stores */
   setStage("retrieve", "scoring long-term memories against your message");
+  sfx.stage();
   const { picked, diag } = retrieve(text);
   runtime.contextual = picked;
   trace.retrieve = diag;
@@ -228,6 +239,7 @@ export async function handleSend() {
   runtime.contextual.forEach((r) => flashCard(r.item.id, "just-retrieved"));
   if (runtime.contextual.length) {
     flashPanel("contextual");
+    sfx.retrieve();
     stageNote(
       "retrieve",
       `${runtime.contextual.length} memor${runtime.contextual.length === 1 ? "y" : "ies"} recalled`,
@@ -246,14 +258,76 @@ export async function handleSend() {
   persistMemory();
   await sleep(650);
 
-  /* 3 · GENERATE */
+  /* 3 · ACT - the orchestrator routes to real-world tools when needed */
+  setStage(
+    "act",
+    settings.mode === "live"
+      ? "llm planner reading the toolbox"
+      : "planner scanning for tool intents",
+  );
+  sfx.stage();
+  trace.act = {
+    engine: settings.mode === "live" ? "llm planner" : "regex planner",
+    calls: [],
+  };
+  const toolResults = [];
+  let toolCalls = [];
+  try {
+    toolCalls = await plan(text);
+  } catch (e) {
+    toolCalls = [];
+  }
+  if (toolCalls.length) {
+    const actEl = addAgentActivity(toolCalls);
+    for (let i = 0; i < toolCalls.length; i++) {
+      const c = toolCalls[i];
+      setActivity(actEl, i, "running");
+      stageNote("act", `${c.tool} running…`);
+      const t0 = performance.now();
+      try {
+        const res = await runTool(c.tool, c.args);
+        toolResults.push({ tool: c.tool, ok: true, summary: res.summary });
+        trace.act.calls.push({
+          tool: c.tool,
+          args: c.args,
+          ok: true,
+          summary: res.summary.slice(0, 200),
+          ms: Math.round(performance.now() - t0),
+        });
+        setActivity(actEl, i, "done", res.summary);
+        logEvent("tool", `${esc(c.tool)} → ${esc(res.summary.slice(0, 90))}`);
+        sfx.tool();
+      } catch (err) {
+        toolResults.push({ tool: c.tool, ok: false, error: err.message });
+        trace.act.calls.push({
+          tool: c.tool,
+          args: c.args,
+          ok: false,
+          error: err.message.slice(0, 200),
+          ms: Math.round(performance.now() - t0),
+        });
+        setActivity(actEl, i, "fail", err.message);
+        logEvent("error", `tool ${esc(c.tool)} failed: ${esc(err.message)}`);
+        sfx.error();
+      }
+    }
+    stageNote(
+      "act",
+      `${toolResults.filter((r) => r.ok).length}/${toolCalls.length} tool call(s) succeeded`,
+    );
+  } else {
+    stageNote("act", "no tools needed for this message");
+  }
+  await sleep(350);
+
+  /* 4 · GENERATE */
   setStage(
     "generate",
     settings.mode === "live"
       ? `calling ${currentModel().split("/").pop()} via ${PROVIDERS[settings.provider].label}`
       : "demo model composing a reply",
   );
-  runtime.lastPrompt = buildChatMessages(text, runtime.contextual);
+  runtime.lastPrompt = buildChatMessages(text, runtime.contextual, toolResults);
   trace.generate = {
     mode: settings.mode,
     provider:
@@ -270,10 +344,11 @@ export async function handleSend() {
       reply = await callLLM(runtime.lastPrompt);
     } else {
       await sleep(600);
-      reply = demoReply(text, runtime.contextual);
+      reply = demoReply(text, runtime.contextual, toolResults);
     }
   } catch (err) {
     stageNote("generate", "model call failed");
+    sfx.error();
     logEvent("error", `generate: ${esc(err.message)}`);
     addChatMsg(
       "system-note",
@@ -283,6 +358,7 @@ export async function handleSend() {
     $("#sendBtn").disabled = false;
     return;
   }
+  sfx.stage();
   trace.generate.ms = Math.round(performance.now() - genStart);
   trace.generate.replyTokens = estTokens(reply);
   const agentEl = addChatMsg("agent", reply);
@@ -310,7 +386,7 @@ export async function handleSend() {
   persistMemory();
   await sleep(350);
 
-  /* 4 · EXTRACT */
+  /* 5 · EXTRACT */
   setStage("extract", "mining the exchange for durable knowledge");
   let extraction;
   let dupesRejected = 0;
@@ -368,7 +444,7 @@ export async function handleSend() {
   );
   await sleep(450);
 
-  /* 5 · WRITE */
+  /* 6 · WRITE */
   setStage("write", "committing to long-term stores");
   const { written, invalidRejected } = applyExtraction(
     extraction,
@@ -386,8 +462,13 @@ export async function handleSend() {
     })),
   };
   memory.traces.push(trace);
-  if (memory.traces.length > TRACE_CAP)
+  if (memory.traces.length > TRACE_CAP) {
     memory.traces = memory.traces.slice(-TRACE_CAP);
+    logEvent(
+      "info",
+      `eviction: oldest turn trace dropped - only the last ${TRACE_CAP} are kept (see the db meter below)`,
+    );
+  }
   persistMemory();
   addChipsTo(userMsgEl, [
     {

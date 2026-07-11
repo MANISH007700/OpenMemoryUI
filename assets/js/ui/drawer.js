@@ -70,10 +70,10 @@ export function openItem(id) {
     <div class="d-section"><h4>How it was stored</h4>
       <p class="dim">${
         item.type === "semantic"
-          ? "Pipeline stage 4 (Extract) analyzed the exchange and emitted this as a durable " +
+          ? "Pipeline stage 5 (Extract) analyzed the exchange and emitted this as a durable " +
             item.kind +
-            ". Stage 5 (Write) committed it to the semantic store in this browser's localStorage, where it survives sessions and reloads."
-          : "Pipeline stage 5 (Write) journals every exchange as an event. Episodes keep the when and what of the conversation even when no facts were extracted."
+            ". Stage 6 (Write) committed it to the semantic store in this browser's localStorage, where it survives sessions and reloads."
+          : "Pipeline stage 6 (Write) journals every exchange as an event. Episodes keep the when and what of the conversation even when no facts were extracted."
       }</p></div>
     <div class="d-section"><h4>Record</h4>
       <div class="d-kv">
@@ -137,7 +137,7 @@ export function openXray() {
       <pre class="promptdump">${esc(dump)}</pre></div>
     ${
       runtime.lastExtractRaw
-        ? `<div class="d-section"><h4>Raw extraction output (stage 4)</h4>
+        ? `<div class="d-section"><h4>Raw extraction output (stage 5)</h4>
       <pre class="promptdump">${esc(runtime.lastExtractRaw)}</pre></div>`
         : ""
     }`,

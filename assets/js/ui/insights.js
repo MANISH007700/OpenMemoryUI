@@ -130,6 +130,34 @@ export function openInsights() {
     ? t.write.written.filter((w) => w.type === "episodic").length
     : 0;
   const rejected = t ? t.extract.dupesRejected + t.write.invalidRejected : 0;
+  const toolCalls = t?.act?.calls || [];
+  const toolSuccesses = toolCalls.filter((c) => c.ok).length;
+  const toolFailures = toolCalls.length - toolSuccesses;
+  const actFunnelHtml =
+    t && t.act
+      ? `
+    <p style="margin-top:12px"><b>Act funnel</b> - what the orchestrator did before answering:</p>
+    ${funnelRows([
+      {
+        label: "planned tool calls",
+        n: toolCalls.length,
+        color: "#ffd166",
+        title: "Calls selected by the demo regex router or live LLM planner",
+      },
+      {
+        label: "succeeded",
+        n: toolSuccesses,
+        color: STORE_COLORS.contextual,
+        title: "Tool calls that returned usable results",
+      },
+      {
+        label: "failed",
+        n: toolFailures,
+        color: "#f87693",
+        title: "Tool calls that failed or were blocked by the remote service",
+      },
+    ])}`
+      : "";
 
   const lastTurnHtml = !t
     ? `<p class="dim">Send a message first - the funnels trace your latest turn.</p>`
@@ -156,6 +184,7 @@ export function openInsights() {
         title: "Top-k winners, sent to the model as RETRIEVED MEMORIES",
       },
     ])}
+    ${actFunnelHtml}
     <p style="margin-top:12px"><b>Write funnel</b> - of what the extractor proposed, what got stored:</p>
     ${funnelRows([
       {
@@ -320,6 +349,25 @@ export function openTrace(id) {
     </div>`,
     )
     .join("");
+  // older traces predate the Act stage - number the sections dynamically
+  const hasAct = !!t.act;
+  const n = hasAct
+    ? { act: 3, gen: 4, ext: 5, wr: 6 }
+    : { gen: 3, ext: 4, wr: 5 };
+  const actHtml = hasAct
+    ? `
+    <div class="trace-stage"><h5>${n.act} · Act - tools</h5>
+      <p class="dim">Planner: ${esc(t.act.engine)}. ${t.act.calls.length ? `${t.act.calls.length} tool call(s):` : "No tools were needed for this message."}</p>
+      ${t.act.calls
+        .map(
+          (c) => `
+      <div class="d-history-item">
+        <b>${esc(c.tool)}</b>(${esc(JSON.stringify(c.args))}) · ${c.ms} ms · ${c.ok ? "✓" : "✗ failed"}
+        <div class="dim">${esc(c.ok ? c.summary : c.error)}</div>
+      </div>`,
+        )
+        .join("")}</div>`
+    : "";
   openDrawer(
     `Turn trace · ${fmtTime(t.at)}`,
     `
@@ -333,8 +381,8 @@ export function openTrace(id) {
       <p style="margin:6px 0">${tokenChips || '<span class="dim">no scorable tokens</span>'}</p>
       <p class="dim">${t.retrieve.pool} memories scored → ${t.retrieve.above} above threshold → top ${t.retrieve.picked} injected${t.retrieve.recall ? " (recall-all question: semantic memories boosted)" : ""}. Top candidates:</p>
       <table class="cand-table">${candRows || `<tr><td class="dim">long-term memory was empty</td></tr>`}</table></div>
-
-    <div class="trace-stage"><h5>3 · Generate</h5>
+    ${actHtml}
+    <div class="trace-stage"><h5>${n.gen} · Generate</h5>
       <div class="d-kv">
         <span class="k">engine</span><span class="v">${esc(t.generate.provider)} / ${esc(t.generate.model)}</span>
         <span class="k">latency</span><span class="v">${t.generate.ms} ms</span>
@@ -344,13 +392,13 @@ export function openTrace(id) {
       <p class="dim" style="margin-top:6px">The exact prompt (retrieved memories are inside the system message):</p>
       <pre class="promptdump">${esc(t.promptDump)}</pre></div>
 
-    <div class="trace-stage"><h5>4 · Extract</h5>
+    <div class="trace-stage"><h5>${n.ext} · Extract</h5>
       <p class="dim">Engine: ${esc(t.extract.engine)}. ${t.extract.candidates} candidate(s)${t.extract.dupesRejected ? `, ${t.extract.dupesRejected} rejected as duplicates` : ""}.</p>
       ${extractItems}
       <p class="dim" style="margin-top:6px">Episode: ${esc(t.extract.episodeSummary)}</p>
       ${t.extract.raw ? `<p class="dim" style="margin-top:6px">Raw model output:</p><pre class="promptdump">${esc(t.extract.raw)}</pre>` : ""}</div>
 
-    <div class="trace-stage"><h5>5 · Write</h5>
+    <div class="trace-stage"><h5>${n.wr} · Write</h5>
       ${writeItems || `<p class="dim">Nothing written.</p>`}
       ${t.write.invalidRejected ? `<p class="dim">${t.write.invalidRejected} item(s) dropped as malformed extractor output.</p>` : ""}</div>`,
     true,

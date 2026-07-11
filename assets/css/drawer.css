@@ -252,6 +252,121 @@ pre.promptdump {
   margin: 1px 4px 1px 0;
 }
 
+/* toolbox */
+.tool-searchbar {
+  position: sticky;
+  top: -16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  margin-bottom: 10px;
+  background: var(--ink-2);
+}
+.tool-searchbar input {
+  flex: 1;
+  min-width: 0;
+  background: var(--ink);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  outline: none;
+}
+.tool-searchbar input:focus {
+  border-color: var(--contextual);
+}
+.tool-searchbar span {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+.tool-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+}
+.tool-row .tool-icon {
+  flex: none;
+  font-size: 15px;
+}
+.tool-row .tool-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tool-row .tool-main b {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text);
+}
+.tool-row .tool-desc {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.tool-row .tool-meta {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  margin-top: 2px;
+}
+.tool-row[hidden] {
+  display: none;
+}
+.tool-row .tool-try {
+  margin-left: auto;
+  flex: none;
+  background: transparent;
+  border: 1px solid var(--contextual);
+  color: var(--contextual);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+.tool-row .tool-try:hover {
+  background: rgba(87, 230, 196, 0.1);
+}
+.tool-row .tool-try.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.mcp-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.mcp-add input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-family: var(--mono);
+  font-size: 11px;
+  outline: none;
+}
+.mcp-add input:focus {
+  border-color: var(--contextual);
+}
+.mono-hint {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--contextual);
+}
+
 /* per-turn trace */
 .trace-stage {
   border: 1px solid var(--line);

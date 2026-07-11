@@ -222,10 +222,15 @@ export async function fetchModelGroups(provider) {
   ];
 }
 
-export function buildChatMessages(userMsg, retrieved) {
+export function buildChatMessages(userMsg, retrieved, toolResults = []) {
   const memLines = retrieved.map(
     (r) =>
       `- [${r.item.type}/${r.item.kind}] ${r.item.content} (relevance ${r.score})`,
+  );
+  const toolLines = toolResults.map((r) =>
+    r.ok
+      ? `- ${r.tool}: ${r.summary}`
+      : `- ${r.tool}: FAILED (${r.error}) - tell the user honestly`,
   );
   const system = [
     "You are the conversational core of 'Memory Glassbox', a teaching tool that makes agentic memory visible.",
@@ -235,6 +240,11 @@ export function buildChatMessages(userMsg, retrieved) {
     memLines.length
       ? "RETRIEVED MEMORIES:\n" + memLines.join("\n")
       : "RETRIEVED MEMORIES: (none - your long-term store had nothing relevant)",
+    "",
+    toolLines.length
+      ? "TOOL RESULTS (fetched live from the real world seconds ago - treat as ground truth and base your answer on them):\n" +
+        toolLines.join("\n")
+      : "",
   ].join("\n");
   // the current user message was already appended to session memory in stage 1,
   // so drop it from the history slice to avoid sending it twice

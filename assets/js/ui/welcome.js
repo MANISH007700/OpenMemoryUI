@@ -1,5 +1,5 @@
 /* First-visit welcome overlay: the four memory stores as cards (plain-English
-   plus an under-the-hood line), the 5-stage pipeline, and when to reach for
+   plus an under-the-hood line), the 6-stage pipeline, and when to reach for
    the analytics tools. Shows on every visit until "don't show again" is
    checked; the "how it works" button reopens it any time. */
 

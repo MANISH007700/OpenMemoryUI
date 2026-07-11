@@ -1,4 +1,4 @@
-/* Visual feedback: the 5-stage pipeline strip, flying packets on the
+/* Visual feedback: the 6-stage pipeline strip, flying packets on the
    memory bus, and panel / card flash animations. */
 
 import { $, $$, esc } from "../utils.js";

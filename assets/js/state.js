@@ -27,6 +27,8 @@ export const settings = {
   models: { ...DEFAULT_MODELS }, // last chosen model per provider
   hideWelcome: false, // "don't show again" on the welcome overlay
   insightsTipShown: false, // one-time nudge toward the insights view
+  soundOn: false, // synthesized SFX + ambient pad (off until toggled)
+  mcpServers: [], // remote MCP server URLs to reconnect on boot
 };
 
 /* Per-visit runtime state (never persisted). */
@@ -45,6 +47,7 @@ export const currentModel = () =>
 export function persistMemory() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(memory));
+    window.dispatchEvent(new CustomEvent("glassbox:persisted"));
   } catch (e) {
     console.warn("glassbox: could not persist memory", e);
   }

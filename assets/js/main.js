@@ -22,6 +22,10 @@ import {
 } from "./ui/settings.js";
 import { initClaps, clap } from "./ui/claps.js";
 import { exportMemory, importMemoryFile, forgetItem } from "./ui/data.js";
+import { openToolbox } from "./ui/toolbox.js";
+import { initSound, toggleSound } from "./ui/sound.js";
+import { initStorage } from "./ui/storage.js";
+import { initMcp } from "./mcp.js";
 import { PROVIDERS } from "./config.js";
 
 /* ---- delegated clicks: provenance links, explainers, try-it fills ---- */
@@ -53,6 +57,7 @@ document.addEventListener("click", (e) => {
   const fill = e.target.closest("[data-fill]");
   if (fill) {
     $("#input").value = fill.dataset.fill;
+    if (fill.closest("#drawer")) closeDrawer(); // e.g. a toolbox "try" button
     $("#input").focus();
   }
 });
@@ -102,7 +107,9 @@ $("#wipeBtn").addEventListener("click", () => {
 });
 $("#xrayBtn").addEventListener("click", openXray);
 $("#insightsBtn").addEventListener("click", openInsights);
+$("#toolboxBtn").addEventListener("click", openToolbox);
 $("#howBtn").addEventListener("click", showWelcome);
+$("#soundBtn").addEventListener("click", toggleSound);
 $("#clapBtn").addEventListener("click", clap);
 
 $("#modeDemo").addEventListener("click", () => setMode("demo"));
@@ -151,6 +158,9 @@ setProvider(settings.provider);
 setMode(settings.mode);
 renderAll();
 initClaps();
+initSound();
+initStorage();
+initMcp();
 initWelcome();
 logEvent(
   "info",
