@@ -111,3 +111,8 @@ A "how it works" onboarding opens on first visit and stays available from the to
 - **Storage**: everything lives in `localStorage` under `glassbox.memory.v1`, as plain JSON records with id, kind, content, reason, source, timestamps, retrieval log, and edit history.
 - **Retrieval**: transparent lexical scoring: word overlap between your message and each memory, normalized by memory length, plus recency, reinforcement (often-recalled memories score higher), and importance boosts. Production systems use embeddings; the idea is the same, the matching is fuzzier.
 - **Extraction**: in live mode a second LLM call returns strict JSON deciding what is durable enough to keep, and whether it should add a new memory or update an existing one. In demo mode the same decision is made by regex heuristics.
+
+---
+
+Built with ♥ by [Manish Sharma](https://manish-luci.netlify.app).
+If the glassbox made memory click for you, hit the 👏 button in the app footer.

@@ -20,6 +20,7 @@ import {
   validateKey,
   syncModelSelection,
 } from "./ui/settings.js";
+import { initClaps, clap } from "./ui/claps.js";
 import { PROVIDERS } from "./config.js";
 
 /* ---- delegated clicks: provenance links, explainers, try-it fills ---- */
@@ -73,6 +74,7 @@ $("#wipeBtn").addEventListener("click", () => {
 $("#xrayBtn").addEventListener("click", openXray);
 $("#insightsBtn").addEventListener("click", openInsights);
 $("#howBtn").addEventListener("click", openOnboarding);
+$("#clapBtn").addEventListener("click", clap);
 
 $("#modeDemo").addEventListener("click", () => setMode("demo"));
 $("#modeLive").addEventListener("click", () => setMode("live"));
@@ -119,6 +121,7 @@ loadPersisted();
 setProvider(settings.provider);
 setMode(settings.mode);
 renderAll();
+initClaps();
 if (!settings.onboarded) {
   settings.onboarded = true;
   persistSettings();

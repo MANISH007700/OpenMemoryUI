@@ -420,6 +420,7 @@
   letter-spacing: 1.4px;
   text-transform: uppercase;
   color: var(--faint);
+  flex-wrap: wrap;
 }
 #logbar .log-head i {
   width: 6px;
@@ -427,6 +428,57 @@
   border-radius: 50%;
   background: var(--write);
   display: inline-block;
+}
+#logbar .log-head .spacer {
+  flex: 1;
+}
+#logbar .credit {
+  text-transform: none;
+  letter-spacing: 0.4px;
+  font-size: 10.5px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+#logbar .credit a {
+  color: var(--muted);
+  text-decoration: underline dotted;
+}
+#logbar .credit a:hover {
+  color: var(--contextual);
+}
+#clapBtn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 1px 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+#clapBtn:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+#clapBtn.pop {
+  animation: clappop 0.3s ease-out;
+}
+@keyframes clappop {
+  40% {
+    transform: scale(1.2);
+  }
+}
+.clap-float {
+  position: fixed;
+  z-index: 400;
+  pointer-events: none;
+  font-size: 15px;
 }
 #logScroll {
   overflow-y: auto;
