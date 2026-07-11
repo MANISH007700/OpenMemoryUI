@@ -85,7 +85,10 @@ export function openItem(id) {
         <span class="k">times recalled</span><span class="v">${item.retrievals.length}</span>
       </div></div>
     <div class="d-section"><h4>Edit history</h4>${historyHtml}</div>
-    <div class="d-section"><h4>Retrieval history</h4>${retrievalsHtml}</div>`,
+    <div class="d-section"><h4>Retrieval history</h4>${retrievalsHtml}</div>
+    <div class="d-section"><h4>Your data, your call</h4>
+      <button class="tbtn danger" data-forget="${item.id}">forget this memory</button>
+      <p class="dim" style="margin-top:6px">Removes it permanently from the ${item.type} store. The agent will genuinely no longer know this.</p></div>`,
   );
 }
 

@@ -2,7 +2,7 @@
    (receive → retrieve → generate → extract → write), plus session
    consolidation and the full wipe. */
 
-import { PROVIDERS, TRACE_CAP } from "./config.js";
+import { PROVIDERS, TRACE_CAP, TOKEN_BUDGET } from "./config.js";
 import {
   memory,
   settings,
@@ -405,6 +405,21 @@ export async function handleSend() {
   await sleep(500);
   finishStages();
 
+  // teaching moment: the context window is nearly full - real agents
+  // consolidate at exactly this point
+  const usedTokens = memory.session.reduce((a, t) => a + t.tokens, 0);
+  if (usedTokens > TOKEN_BUDGET * 0.85 && !runtime.budgetWarned) {
+    runtime.budgetWarned = true;
+    addChatMsg(
+      "system-note",
+      `The context window is ${Math.round((usedTokens / TOKEN_BUDGET) * 100)}% full - this is the moment real agents have to act. Press "end session" to watch the whole conversation get consolidated into one episodic summary before working memory is cleared.`,
+    );
+    logEvent(
+      "info",
+      `session memory at ${usedTokens.toLocaleString()} / ${TOKEN_BUDGET.toLocaleString()} tokens - consolidation recommended`,
+    );
+  }
+
   // one-time nudge: after a few turns there is enough data for the analytics
   if (memory.traces.length === 3 && !settings.insightsTipShown) {
     settings.insightsTipShown = true;
@@ -444,6 +459,7 @@ export function endSession() {
   memory.session = [];
   memory.sessionStartedAt = null;
   runtime.contextual = [];
+  runtime.budgetWarned = false;
   persistMemory();
   renderAll();
   flashPanel("episodic");
@@ -466,6 +482,7 @@ export function endSession() {
 
 export function wipeAll() {
   resetMemory();
+  runtime.budgetWarned = false;
   renderAll();
   logEvent("info", "all memory stores wiped");
 }

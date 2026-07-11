@@ -21,6 +21,7 @@ import {
   syncModelSelection,
 } from "./ui/settings.js";
 import { initClaps, clap } from "./ui/claps.js";
+import { exportMemory, importMemoryFile, forgetItem } from "./ui/data.js";
 import { PROVIDERS } from "./config.js";
 
 /* ---- delegated clicks: provenance links, explainers, try-it fills ---- */
@@ -39,6 +40,16 @@ document.addEventListener("click", (e) => {
     openExplainer(explainBtn.dataset.explain);
     return;
   }
+  const forget = e.target.closest("[data-forget]");
+  if (forget) {
+    if (
+      confirm(
+        "Forget this memory permanently? The agent will no longer know it.",
+      )
+    )
+      forgetItem(forget.dataset.forget);
+    return;
+  }
   const fill = e.target.closest("[data-fill]");
   if (fill) {
     $("#input").value = fill.dataset.fill;
@@ -49,6 +60,17 @@ $("#drawerClose").addEventListener("click", closeDrawer);
 $("#overlay").addEventListener("click", closeDrawer);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeDrawer();
+  // "/" focuses the composer from anywhere (unless already typing somewhere)
+  if (
+    e.key === "/" &&
+    !e.ctrlKey &&
+    !e.metaKey &&
+    !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName) &&
+    $("#welcome").hidden
+  ) {
+    e.preventDefault();
+    $("#input").focus();
+  }
 });
 
 /* ---- composer ---- */
@@ -62,10 +84,17 @@ $("#input").addEventListener("keydown", (e) => {
 
 /* ---- top bar ---- */
 $("#endSessionBtn").addEventListener("click", endSession);
+$("#exportBtn").addEventListener("click", exportMemory);
+$("#importBtn").addEventListener("click", () => $("#importFile").click());
+$("#importFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) importMemoryFile(file);
+  e.target.value = ""; // allow re-importing the same file
+});
 $("#wipeBtn").addEventListener("click", () => {
   if (
     !confirm(
-      "Erase ALL memories (session, episodic, semantic) and turn traces? This cannot be undone.",
+      'Erase ALL memories (session, episodic, semantic) and turn traces? This cannot be undone.\n\nTip: press "export" first if you want a backup.',
     )
   )
     return;

@@ -1,2 +1,27 @@
 [build]
   publish = "."
+
+# Security headers for every response.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Code and data change on deploy; cache briefly.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+# The launch video and poster are large and effectively immutable.
+[[headers]]
+  for = "/assets/openmemoryui-launch.mp4"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/assets/openmemoryui-launch.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

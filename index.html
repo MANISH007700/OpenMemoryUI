@@ -4,6 +4,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Memory Glassbox - transparent agentic memory</title>
+    <meta
+      name="description"
+      content="A transparent agentic memory system you can talk to. Watch every message get stored, scored and recalled live, with provenance on every single memory."
+    />
+    <meta name="theme-color" content="#0d141f" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Memory Glassbox - transparent agentic memory"
+    />
+    <meta
+      property="og:description"
+      content="Talk to an agent whose memory is a glass box: every message is traced live through receive → retrieve → generate → extract → write."
+    />
+    <meta
+      property="og:image"
+      content="https://raw.githubusercontent.com/MANISH007700/OpenMemoryUI/master/assets/openmemoryui-launch.jpg"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Memory Glassbox - transparent agentic memory"
+    />
+    <meta
+      name="twitter:description"
+      content="Talk to an agent whose memory is a glass box: every message is traced live through a real 5-stage memory pipeline."
+    />
+    <meta
+      name="twitter:image"
+      content="https://raw.githubusercontent.com/MANISH007700/OpenMemoryUI/master/assets/openmemoryui-launch.jpg"
+    />
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d141f'/%3E%3Ccircle cx='14' cy='32' r='5' fill='%236fd3ff'/%3E%3Ccircle cx='26' cy='32' r='5' fill='%23ffb454'/%3E%3Ccircle cx='38' cy='32' r='5' fill='%23a78bfa'/%3E%3Ccircle cx='50' cy='32' r='5' fill='%2357e6c4'/%3E%3C/svg%3E"
@@ -104,6 +135,26 @@
         >
           end session
         </button>
+        <button
+          class="tbtn"
+          id="exportBtn"
+          title="Download every stored memory as a JSON file - your data is portable"
+        >
+          export
+        </button>
+        <button
+          class="tbtn"
+          id="importBtn"
+          title="Restore memories from a previously exported JSON file"
+        >
+          import
+        </button>
+        <input
+          type="file"
+          id="importFile"
+          accept=".json,application/json"
+          hidden
+        />
         <button
           class="tbtn danger"
           id="wipeBtn"
@@ -305,7 +356,11 @@
         <div class="log-head">
           <i></i> memory bus · every read and write, as it happens
           <span class="spacer"></span>
-          <button id="clapBtn" title="Enjoying the glassbox? Send a clap!">
+          <button
+            id="clapBtn"
+            title="Enjoying the glassbox? Send a clap!"
+            aria-label="Send a clap to show you like this project"
+          >
             👏 <span id="clapCount"></span>
           </button>
           <span class="credit"

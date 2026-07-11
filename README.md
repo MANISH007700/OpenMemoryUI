@@ -108,6 +108,9 @@ A "how it works" onboarding opens on first visit and stays available from the to
 - **end session**: watch working memory get consolidated into a single episodic summary before being wiped, the way real agents survive context-window limits.
 - Say "actually, I prefer..." to watch a semantic memory get updated in place, keeping its edit history.
 - Ask "what do you remember about me?" to trigger a recall-all retrieval.
+- **export / import**: download every stored memory as one readable JSON file, and restore it later or on another machine. The glassbox promise extends to portability.
+- **forget this memory**: every memory's provenance drawer has a forget button - the agent genuinely no longer knows it afterwards.
+- Press `/` anywhere to jump to the composer.
 
 ## How memory works here (the honest version)
 

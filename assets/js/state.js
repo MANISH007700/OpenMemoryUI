@@ -35,6 +35,7 @@ export const runtime = {
   lastPrompt: null, // exact messages array sent to the model on last turn
   lastExtractRaw: null, // raw extractor output for the last turn
   busy: false,
+  budgetWarned: false, // once-per-session nudge when the context window fills up
 };
 
 export const currentKey = () => settings.keys[settings.provider] || "";
@@ -42,10 +43,18 @@ export const currentModel = () =>
   settings.models[settings.provider] || DEFAULT_MODELS[settings.provider];
 
 export function persistMemory() {
-  localStorage.setItem(STORE_KEY, JSON.stringify(memory));
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(memory));
+  } catch (e) {
+    console.warn("glassbox: could not persist memory", e);
+  }
 }
 export function persistSettings() {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch (e) {
+    console.warn("glassbox: could not persist settings", e);
+  }
 }
 
 export function loadPersisted() {
