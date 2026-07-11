@@ -1,15 +1,17 @@
-/* Synthesized audio: a dim uplifting techno bed plus tiny event tones for
-   response, retrieval, tool calls and writes. No audio files are used. */
+/* Synthesized audio: an uplifting techno loop plus event tones for response,
+   retrieval, tool calls and writes. No audio files are used. */
 
 import { settings, persistSettings } from "../state.js";
 import { $ } from "../utils.js";
 import { showToast } from "./toast.js";
 
 let ctx = null;
+let output = null;
 let ambient = null; // {master, oscs, timers}
 
 const BPM = 118;
 const BEAT = 60 / BPM;
+const STEP = BEAT / 2;
 const ROOTS = [220, 246.94, 196, 293.66]; // A, B, G, D - bright but calm
 
 async function ensureCtx() {
@@ -18,6 +20,20 @@ async function ensureCtx() {
   if (!ctx) ctx = new AudioCtor();
   if (ctx.state === "suspended") await ctx.resume();
   return ctx;
+}
+
+function out() {
+  if (!output) {
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -14;
+    compressor.knee.value = 20;
+    compressor.ratio.value = 4;
+    compressor.attack.value = 0.004;
+    compressor.release.value = 0.16;
+    compressor.connect(ctx.destination);
+    output = compressor;
+  }
+  return output;
 }
 
 function note({
@@ -48,9 +64,9 @@ function note({
     f.type = filter.type;
     f.frequency.setValueAtTime(filter.freq, t0);
     if (filter.q) f.Q.value = filter.q;
-    destination.connect(f).connect(ctx.destination);
+    destination.connect(f).connect(out());
   } else {
-    destination.connect(ctx.destination);
+    destination.connect(out());
   }
 
   osc.connect(gain);
@@ -62,7 +78,7 @@ function blip(freq, dur = 0.08, type = "sine", vol = 0.04, delay = 0) {
   note({ freq, dur, type, vol, delay });
 }
 
-function chord(freqs, delay = 0, vol = 0.025, dur = 0.28) {
+function chord(freqs, delay = 0, vol = 0.04, dur = 0.28) {
   freqs.forEach((freq, i) =>
     note({
       freq,
@@ -79,7 +95,7 @@ function kick(delay = 0, vol = 0.032) {
   note({
     freq: 92,
     slideTo: 48,
-    dur: 0.16,
+    dur: 0.19,
     type: "sine",
     vol,
     delay,
@@ -87,79 +103,120 @@ function kick(delay = 0, vol = 0.032) {
   });
 }
 
-function bass(freq, delay = 0) {
+function bass(freq, delay = 0, vol = 0.045) {
   note({
     freq,
-    dur: 0.18,
+    dur: 0.22,
     type: "sawtooth",
-    vol: 0.014,
+    vol,
     delay,
-    filter: { type: "lowpass", freq: 260, q: 2.2 },
+    filter: { type: "lowpass", freq: 420, q: 2.2 },
   });
 }
 
-function tick(delay = 0, vol = 0.009) {
+function noiseHit({
+  delay = 0,
+  vol = 0.03,
+  dur = 0.04,
+  filterType = "highpass",
+  freq = 5200,
+  q = 0.7,
+}) {
   if (!settings.soundOn || !ctx) return;
   const t0 = ctx.currentTime + delay;
-  const len = Math.floor(ctx.sampleRate * 0.026);
+  const len = Math.floor(ctx.sampleRate * dur);
   const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
   const data = buffer.getChannelData(0);
-  for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * 0.4;
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
 
   const src = ctx.createBufferSource();
   const gain = ctx.createGain();
-  const hp = ctx.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.value = 5200;
+  const filter = ctx.createBiquadFilter();
+  filter.type = filterType;
+  filter.frequency.value = freq;
+  filter.Q.value = q;
   gain.gain.setValueAtTime(0.0001, t0);
-  gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.004);
-  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.025);
+  gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   src.buffer = buffer;
-  src.connect(hp).connect(gain).connect(ctx.destination);
+  src.connect(filter).connect(gain).connect(out());
   src.start(t0);
-  src.stop(t0 + 0.03);
+  src.stop(t0 + dur + 0.01);
+}
+
+function tick(delay = 0, vol = 0.028) {
+  noiseHit({ delay, vol, dur: 0.032, filterType: "highpass", freq: 6200 });
+}
+
+function openHat(delay = 0, vol = 0.03) {
+  noiseHit({ delay, vol, dur: 0.12, filterType: "highpass", freq: 4600 });
+}
+
+function snare(delay = 0, vol = 0.07) {
+  noiseHit({
+    delay,
+    vol,
+    dur: 0.095,
+    filterType: "bandpass",
+    freq: 1450,
+    q: 1.1,
+  });
+  blip(190, 0.055, "triangle", vol * 0.32, delay);
+}
+
+function lead(freq, delay = 0, vol = 0.042) {
+  note({
+    freq,
+    dur: 0.13,
+    type: "square",
+    vol,
+    delay,
+    filter: { type: "lowpass", freq: 2600, q: 1.8 },
+  });
 }
 
 export const sfx = {
   send: () => {
-    kick(0, 0.036);
-    blip(587, 0.08, "triangle", 0.028, 0.07);
+    kick(0, 0.08);
+    blip(587, 0.08, "triangle", 0.045, 0.07);
   },
-  stage: () => tick(0, 0.007),
+  stage: () => tick(0, 0.018),
   retrieve: () => {
-    blip(880, 0.07, "sine", 0.035);
-    blip(1174, 0.09, "triangle", 0.026, 0.07);
-    tick(0.02, 0.008);
+    blip(880, 0.07, "sine", 0.052);
+    blip(1174, 0.09, "triangle", 0.04, 0.07);
+    tick(0.02, 0.026);
   },
   respondStart: () => {
-    blip(392, 0.08, "triangle", 0.025);
-    blip(523, 0.08, "triangle", 0.022, 0.08);
-    tick(0.16, 0.007);
+    blip(392, 0.08, "triangle", 0.045);
+    blip(523, 0.08, "triangle", 0.04, 0.08);
+    tick(0.16, 0.022);
   },
-  response: () => chord([523.25, 659.25, 783.99], 0, 0.026, 0.32),
+  response: () => chord([523.25, 659.25, 783.99], 0, 0.05, 0.34),
   extract: () => {
-    blip(698.46, 0.07, "sine", 0.018);
-    blip(1046.5, 0.08, "sine", 0.016, 0.06);
+    blip(698.46, 0.07, "sine", 0.034);
+    blip(1046.5, 0.08, "sine", 0.03, 0.06);
   },
   write: () => {
-    blip(392, 0.12, "sine", 0.04);
-    blip(587, 0.16, "triangle", 0.034, 0.09);
+    blip(392, 0.12, "sine", 0.058);
+    blip(587, 0.16, "triangle", 0.052, 0.09);
   },
   tool: () => {
-    blip(311, 0.08, "square", 0.02);
-    blip(622, 0.06, "triangle", 0.016, 0.08);
+    blip(311, 0.08, "square", 0.038);
+    blip(622, 0.06, "triangle", 0.032, 0.08);
   },
-  complete: () => chord([587.33, 739.99, 987.77], 0, 0.022, 0.24),
-  error: () => blip(130, 0.25, "sawtooth", 0.035),
+  complete: () => chord([587.33, 739.99, 987.77], 0, 0.045, 0.26),
+  error: () => blip(130, 0.25, "sawtooth", 0.06),
   preview: () => {
-    kick(0, 0.038);
-    bass(110, 0.08);
-    tick(0.18, 0.011);
-    chord([440, 554.37, 659.25, 880], 0.18, 0.024, 0.3);
+    kick(0, 0.11);
+    snare(0.12, 0.07);
+    bass(110, 0.06, 0.065);
+    tick(0.18, 0.034);
+    openHat(0.3, 0.034);
+    chord([440, 554.37, 659.25, 880], 0.18, 0.052, 0.34);
   },
   clap: () => {
-    blip(740, 0.06, "triangle", 0.045);
-    blip(988, 0.08, "triangle", 0.038, 0.05);
+    blip(740, 0.06, "triangle", 0.062);
+    blip(988, 0.08, "triangle", 0.054, 0.05);
   },
 };
 
@@ -168,13 +225,13 @@ function startAmbient() {
 
   const master = ctx.createGain();
   master.gain.value = 0.0001;
-  master.gain.exponentialRampToValueAtTime(0.052, ctx.currentTime + 2.2);
+  master.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 1.2);
 
   const padGain = ctx.createGain();
-  padGain.gain.value = 0.018;
+  padGain.gain.value = 0.075;
   const padFilter = ctx.createBiquadFilter();
   padFilter.type = "lowpass";
-  padFilter.frequency.value = 720;
+  padFilter.frequency.value = 1050;
   padFilter.Q.value = 0.6;
 
   const oscs = [ctx.createOscillator(), ctx.createOscillator()];
@@ -183,7 +240,7 @@ function startAmbient() {
   oscs[1].type = "triangle";
   oscs[1].detune.value = 5;
   oscs.forEach((osc) => osc.connect(padFilter));
-  padFilter.connect(padGain).connect(master).connect(ctx.destination);
+  padFilter.connect(padGain).connect(master).connect(out());
 
   let chordStep = 0;
   let beatStep = 0;
@@ -197,13 +254,28 @@ function startAmbient() {
   };
 
   const pulse = () => {
-    const root = ROOTS[Math.floor(beatStep / 8) % ROOTS.length] / 2;
-    if (beatStep % 2 === 0) kick(0, 0.018);
-    bass(beatStep % 4 === 2 ? root * 1.5 : root);
-    if (beatStep % 2 === 1) tick(0, 0.0065);
-    if (beatStep % 8 === 6) {
+    const root = ROOTS[Math.floor(beatStep / 16) % ROOTS.length] / 2;
+    const step = beatStep % 16;
+    const bassPattern = [
+      1, 0, 1.5, 0, 1, 0.75, 1.5, 0, 1, 0, 1.25, 0, 1.5, 0.75, 1.25, 0,
+    ];
+    const leadPattern = [4, 5, 6, 5, 8, 6, 5, 4, 5, 6, 8, 6, 10, 8, 6, 5];
+
+    if (step % 2 === 0) kick(0, 0.095);
+    if (step % 8 === 2 || step % 8 === 6) snare(0, 0.058);
+    if (step % 2 === 1) tick(0, 0.027);
+    if (step % 4 === 3) openHat(0, 0.032);
+
+    const bassStep = bassPattern[step];
+    if (bassStep) bass(root * bassStep, 0, 0.052);
+
+    if (step % 4 === 0 || step % 4 === 3) {
+      lead(root * leadPattern[step], 0.02, 0.035);
+    }
+
+    if (step === 14) {
       const top = root * 4;
-      chord([top, top * 1.25, top * 1.5], 0, 0.008, 0.14);
+      chord([top, top * 1.25, top * 1.5], 0, 0.034, 0.18);
     }
     beatStep++;
   };
@@ -216,8 +288,8 @@ function startAmbient() {
     master,
     oscs,
     timers: [
-      setInterval(tunePad, BEAT * 8 * 1000),
-      setInterval(pulse, BEAT * 1000),
+      setInterval(tunePad, STEP * 16 * 1000),
+      setInterval(pulse, STEP * 1000),
     ],
   };
 }
@@ -256,7 +328,7 @@ export async function toggleSound() {
     sfx.preview();
     showToast(
       "Music on",
-      "Dim techno pulse, response tones and tool cues are active.",
+      "Techno music, response tones and tool cues are active.",
       "success",
     );
   } else {

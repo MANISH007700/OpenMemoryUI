@@ -27,7 +27,7 @@ export const settings = {
   models: { ...DEFAULT_MODELS }, // last chosen model per provider
   hideWelcome: false, // "don't show again" on the welcome overlay
   insightsTipShown: false, // one-time nudge toward the insights view
-  soundOn: false, // synthesized SFX + ambient pad (off until toggled)
+  soundOn: false, // synthesized techno music + SFX (off until toggled)
   mcpServers: [], // remote MCP server URLs to reconnect on boot
 };
 
