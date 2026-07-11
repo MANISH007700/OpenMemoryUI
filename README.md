@@ -50,9 +50,11 @@ assets/css/
   layout.css                app frame: top bar, grids, pipeline strip, log shell
   components.css            chat bubbles, chips, memory cards, hero, packets
   drawer.css                provenance drawer, insights funnels, charts, trace
+  welcome.css               first-visit welcome overlay
 assets/data/
   providers.json            LLM provider catalog, default + fallback models
   explainers.json           panel explainer copy shown in the drawer
+  onboarding.json           welcome-overlay card copy (the four memory stores)
 assets/js/
   main.js                   entry point: event wiring and boot
   config.js                 constants; loads the JSON data files
@@ -63,7 +65,8 @@ assets/js/
   pipeline.js               the 5-stage send flow, consolidation, wipe
   ui/render.js              the four memory panels + budget bar
   ui/chat.js                chat bubbles and provenance chips
-  ui/drawer.js              item/session/x-ray/onboarding drawer views
+  ui/drawer.js              item/session/x-ray drawer views
+  ui/welcome.js             first-visit welcome overlay (memory cards)
   ui/insights.js            insights analytics + per-turn trace views
   ui/settings.js            mode, provider, key validation, model dropdown
   ui/effects.js             pipeline stages, packets, flash animations

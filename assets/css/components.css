@@ -283,6 +283,35 @@
   z-index: 400;
 }
 
+/* flying keywords: the words that got pulled, fading into a dot as they land */
+.fly-word {
+  position: fixed;
+  z-index: 400;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  background: var(--ink-2);
+  white-space: nowrap;
+}
+.fly-word i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+}
+.fly-word b {
+  font-weight: 500;
+  overflow: hidden;
+  display: inline-block;
+}
+
 /* welcome hero inside chat */
 .hero {
   border: 1px solid var(--line);

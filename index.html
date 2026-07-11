@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="assets/css/layout.css" />
     <link rel="stylesheet" href="assets/css/components.css" />
     <link rel="stylesheet" href="assets/css/drawer.css" />
+    <link rel="stylesheet" href="assets/css/welcome.css" />
   </head>
   <body>
     <div id="app">
@@ -319,6 +320,36 @@
         </div>
         <div id="logScroll"></div>
       </footer>
+    </div>
+
+    <div id="welcome" hidden>
+      <div class="w-box">
+        <header class="w-head">
+          <span class="dot-row"><i></i><i></i><i></i><i></i></span>
+          <div class="w-title">
+            <h2>Four memories, one glass box</h2>
+            <p>
+              Every message you send flows through all four. Here is what each
+              one does, and how to watch it happen.
+            </p>
+          </div>
+          <label class="w-skip" title="Hide this intro on future visits">
+            <input type="checkbox" id="welcomeDontShow" />
+            don't show again
+          </label>
+          <button class="w-close" id="welcomeClose" title="Close">✕</button>
+        </header>
+        <div class="w-pipe" id="welcomePipe"></div>
+        <div class="w-cards" id="welcomeCards"></div>
+        <div class="w-analytics" id="welcomeAnalytics"></div>
+        <footer class="w-foot">
+          <span class="w-hint"
+            >demo mode needs no key · switch to live to chat with a real LLM
+            using your own key</span
+          >
+          <button id="welcomeStart">Start chatting →</button>
+        </footer>
+      </div>
     </div>
 
     <div id="overlay"></div>

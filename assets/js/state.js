@@ -25,7 +25,8 @@ export const settings = {
   provider: "openrouter", // openrouter | anthropic | openai
   keys: { openrouter: "", anthropic: "", openai: "" },
   models: { ...DEFAULT_MODELS }, // last chosen model per provider
-  onboarded: false,
+  hideWelcome: false, // "don't show again" on the welcome overlay
+  insightsTipShown: false, // one-time nudge toward the insights view
 };
 
 /* Per-visit runtime state (never persisted). */

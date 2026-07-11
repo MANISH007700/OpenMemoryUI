@@ -1,7 +1,7 @@
 /* Visual feedback: the 5-stage pipeline strip, flying packets on the
    memory bus, and panel / card flash animations. */
 
-import { $, $$ } from "../utils.js";
+import { $, $$, esc } from "../utils.js";
 
 export function setStage(name, note) {
   $$("#pipeline .stage").forEach((s) => {
@@ -75,6 +75,61 @@ export function firePackets(fromEl, toEl, color, count = 3) {
       },
     ).onfinish = () => p.remove();
   }
+}
+
+/* Fly the actual extracted/matched words from the source to a memory panel.
+   Mid-flight the text fades away and collapses into a glowing dot, so you can
+   see WHICH words jumped, then watch them land as data. Falls back to plain
+   packets when there are no words to show. */
+export function flyKeywords(fromEl, toEl, words, color, count = 3) {
+  const list = (words || []).filter(Boolean).slice(0, 4);
+  if (!list.length) return firePackets(fromEl, toEl, color, count);
+  if (REDUCED || !fromEl || !toEl) return;
+  const f = fromEl.getBoundingClientRect();
+  const t = toEl.getBoundingClientRect();
+  const x2 = t.left + t.width / 2;
+  const y2 = t.top + Math.min(30, t.height / 2);
+  list.forEach((word, i) => {
+    const x1 = f.left + f.width * (0.2 + Math.random() * 0.6);
+    const y1 = f.top + f.height / 2;
+    const p = document.createElement("span");
+    p.className = "fly-word";
+    p.style.color = color;
+    p.style.borderColor = color;
+    p.innerHTML = `<i style="background:${color}; box-shadow:0 0 10px ${color}"></i><b>${esc(word)}</b>`;
+    p.style.left = x1 + "px";
+    p.style.top = y1 + "px";
+    document.body.appendChild(p);
+    const midX = (x1 + x2) / 2 + (Math.random() * 80 - 40);
+    const midY = Math.min(y1, y2) - 50 - Math.random() * 60;
+    const timing = {
+      duration: 1000 + i * 150,
+      delay: i * 170,
+      easing: "cubic-bezier(.3,.1,.3,1)",
+      fill: "backwards",
+    };
+    p.animate(
+      [
+        { transform: "translate(0,0)", opacity: 0 },
+        {
+          transform: `translate(${midX - x1}px, ${midY - y1}px)`,
+          opacity: 1,
+          offset: 0.4,
+        },
+        { transform: `translate(${x2 - x1}px, ${y2 - y1}px)`, opacity: 0.15 },
+      ],
+      timing,
+    ).onfinish = () => p.remove();
+    // the word fades out on approach, leaving only the dot core to land
+    $("b", p).animate(
+      [
+        { opacity: 1, maxWidth: "140px" },
+        { opacity: 1, maxWidth: "140px", offset: 0.55 },
+        { opacity: 0, maxWidth: "0px" },
+      ],
+      timing,
+    );
+  });
 }
 
 export function flashPanel(type) {

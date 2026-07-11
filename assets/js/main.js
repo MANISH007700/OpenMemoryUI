@@ -11,8 +11,8 @@ import {
   openItem,
   openSessionTurn,
   openXray,
-  openOnboarding,
 } from "./ui/drawer.js";
+import { initWelcome, showWelcome } from "./ui/welcome.js";
 import { openInsights, openTrace } from "./ui/insights.js";
 import {
   setMode,
@@ -73,7 +73,7 @@ $("#wipeBtn").addEventListener("click", () => {
 });
 $("#xrayBtn").addEventListener("click", openXray);
 $("#insightsBtn").addEventListener("click", openInsights);
-$("#howBtn").addEventListener("click", openOnboarding);
+$("#howBtn").addEventListener("click", showWelcome);
 $("#clapBtn").addEventListener("click", clap);
 
 $("#modeDemo").addEventListener("click", () => setMode("demo"));
@@ -122,11 +122,7 @@ setProvider(settings.provider);
 setMode(settings.mode);
 renderAll();
 initClaps();
-if (!settings.onboarded) {
-  settings.onboarded = true;
-  persistSettings();
-  openOnboarding();
-}
+initWelcome();
 logEvent(
   "info",
   `glassbox online - ${memory.semantic.length} semantic, ${memory.episodic.length} episodic memories loaded from localStorage`,

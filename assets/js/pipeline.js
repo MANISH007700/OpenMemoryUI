@@ -11,10 +11,11 @@ import {
   currentModel,
   makeItem,
   persistMemory,
+  persistSettings,
   resetMemory,
 } from "./state.js";
 import { $, esc, sleep, now, uid, estTokens, fmtTime } from "./utils.js";
-import { retrieve, isRecallQuery } from "./retrieval.js";
+import { retrieve, isRecallQuery, tokenize } from "./retrieval.js";
 import { demoExtract, demoReply } from "./demo.js";
 import {
   callLLM,
@@ -30,6 +31,7 @@ import {
   resetStages,
   finishStages,
   firePackets,
+  flyKeywords,
   flashPanel,
   flashCard,
 } from "./ui/effects.js";
@@ -41,6 +43,14 @@ import {
   renderSemantic,
   renderContextual,
 } from "./ui/render.js";
+
+/* The words that "jumped": tokens the stored memory shares with the source
+   message. These are what visibly fly from your sentence into the store. */
+function jumpedWords(sourceMsg, content) {
+  const src = new Set(tokenize(sourceMsg));
+  const shared = [...new Set(tokenize(content))].filter((t) => src.has(t));
+  return shared.length ? shared.slice(0, 3) : tokenize(content).slice(0, 3);
+}
 
 /* Commit the extractor's output to the long-term stores (stage 5). */
 function applyExtraction(result, sourceMsg, userMsgEl) {
@@ -107,9 +117,10 @@ function applyExtraction(result, sourceMsg, userMsgEl) {
   for (const w of written) {
     const t = w.item.type;
     flashPanel(t);
-    firePackets(
+    flyKeywords(
       userMsgEl || chatPanel,
       $(`.mem-panel[data-type="${t}"]`),
+      jumpedWords(sourceMsg, w.item.content),
       t === "episodic" ? "#ffb454" : "#a78bfa",
       3,
     );
@@ -168,7 +179,13 @@ export async function handleSend() {
   memory.session.push(turn);
   renderSession();
   flashPanel("session");
-  firePackets(userMsgEl, $(`.mem-panel[data-type="session"]`), "#6fd3ff", 3);
+  flyKeywords(
+    userMsgEl,
+    $(`.mem-panel[data-type="session"]`),
+    tokenize(text).slice(0, 3),
+    "#6fd3ff",
+    3,
+  );
   logEvent(
     "write",
     `session <a data-open="session:${turn.id}">user turn, ~${turn.tokens} tokens</a> - kept verbatim in the context window`,
@@ -197,9 +214,10 @@ export async function handleSend() {
       score: r.score,
       matched: r.matched,
     });
-    firePackets(
+    flyKeywords(
       $(`.mem-panel[data-type="${r.item.type}"]`),
       $(`.mem-panel[data-type="contextual"]`),
+      r.matched,
       "#57e6c4",
       2,
     );
@@ -386,6 +404,16 @@ export async function handleSend() {
   );
   await sleep(500);
   finishStages();
+
+  // one-time nudge: after a few turns there is enough data for the analytics
+  if (memory.traces.length === 3 && !settings.insightsTipShown) {
+    settings.insightsTipShown = true;
+    persistSettings();
+    addChatMsg(
+      "system-note",
+      'Tip: you have a few turns of memory activity now. Open "insights" in the top bar for the funnels, growth chart and keyword map of everything so far - or click "full trace" under any message to replay that turn.',
+    );
+  }
 
   runtime.busy = false;
   $("#sendBtn").disabled = false;

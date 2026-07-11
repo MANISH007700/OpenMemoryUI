@@ -1,0 +1,54 @@
+{
+  "cards": [
+    {
+      "type": "session",
+      "name": "Session memory",
+      "tagline": "the context window",
+      "what": "The conversation itself, kept word for word while you chat.",
+      "how": "Every turn is re-sent to the model so the chat feels continuous. Press \"end session\" and it is compressed into one episodic summary, then wiped.",
+      "hood": "raw turns · token budget bar · replayed into every prompt"
+    },
+    {
+      "type": "episodic",
+      "name": "Episodic memory",
+      "tagline": "the diary",
+      "what": "Time-stamped records of what happened: who said what, and when.",
+      "how": "After every reply, the exchange is journaled as one event. When a new message resembles a past one, that episode gets recalled.",
+      "hood": "1 episode per exchange · session consolidates into 1 summary"
+    },
+    {
+      "type": "semantic",
+      "name": "Semantic memory",
+      "tagline": "the knowledge",
+      "what": "Durable facts, preferences and skills distilled from what you say.",
+      "how": "An extraction pass mines each message for things worth keeping. Contradict yourself and the memory updates in place, keeping its history.",
+      "hood": "extract → dedupe → write · LLM in live mode, regex in demo"
+    },
+    {
+      "type": "contextual",
+      "name": "Contextual memory",
+      "tagline": "the spotlight",
+      "what": "Not a store: what retrieval just recalled for your last message, and why.",
+      "how": "Every memory is scored against your message; only the winners are injected into the prompt. Each card shows its score and matched words.",
+      "hood": "word overlap ÷ length + recency + reinforcement + importance"
+    }
+  ],
+  "pipeline": ["Receive", "Retrieve", "Generate", "Extract", "Write"],
+  "analytics": [
+    {
+      "name": "insights",
+      "when": "after a few messages",
+      "what": "Funnels, growth charts and a keyword map of everything in memory - audit the whole system at once."
+    },
+    {
+      "name": "full trace",
+      "when": "under every message you send",
+      "what": "A chip that replays that turn step by step: every retrieval score (rejects included), the exact prompt, every write."
+    },
+    {
+      "name": "prompt x-ray",
+      "when": "any time",
+      "what": "The exact prompt the model received on the last turn, with the retrieved memories visible inside it."
+    }
+  ]
+}

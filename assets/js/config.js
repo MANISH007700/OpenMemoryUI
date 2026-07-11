@@ -7,9 +7,10 @@ async function loadJSON(name) {
   return res.json();
 }
 
-const [providerData, explainers] = await Promise.all([
+const [providerData, explainers, onboarding] = await Promise.all([
   loadJSON("providers.json"),
   loadJSON("explainers.json"),
+  loadJSON("onboarding.json"),
 ]);
 
 export const STORE_KEY = "glassbox.memory.v1";
@@ -25,6 +26,7 @@ export const PROVIDERS = providerData.providers;
 PROVIDERS.openrouter.staticModels = FALLBACK_MODELS;
 
 export const EXPLAINERS = explainers;
+export const ONBOARDING = onboarding;
 
 export const STORE_COLORS = {
   session: "#6fd3ff",
