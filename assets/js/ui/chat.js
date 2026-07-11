@@ -2,6 +2,22 @@
 
 import { $, esc } from "../utils.js";
 
+function chipMarkup(c) {
+  const classes = ["chip", c.type ? `w-${c.type}` : "", c.className || ""]
+    .filter(Boolean)
+    .map(esc)
+    .join(" ");
+  const attrs = [
+    c.open ? `data-open="${esc(c.open)}"` : "",
+    c.action ? `data-prompt-action="${esc(c.action)}"` : "",
+    c.prompt != null ? `data-prompt="${esc(c.prompt)}"` : "",
+    c.title ? `title="${esc(c.title)}"` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return `<span class="${classes}" ${attrs}>${esc(c.label)}</span>`;
+}
+
 export function addChatMsg(role, content, chips = []) {
   const wrap = document.createElement("div");
   wrap.className = `msg ${role}`;
@@ -9,12 +25,7 @@ export function addChatMsg(role, content, chips = []) {
     wrap.classList.add("just-arrived");
     window.setTimeout(() => wrap.classList.remove("just-arrived"), 1800);
   }
-  const chipHtml = chips
-    .map(
-      (c) =>
-        `<span class="chip w-${c.type}" data-open="${c.open || ""}" title="${esc(c.title || "")}">${esc(c.label)}</span>`,
-    )
-    .join("");
+  const chipHtml = chips.map(chipMarkup).join("");
   wrap.innerHTML = `
     <div class="who">${role === "user" ? "you" : role === "agent" ? "agent" : "system"}</div>
     <div class="bubble">${esc(content)}</div>
@@ -33,12 +44,39 @@ export function addChipsTo(msgEl, chips) {
   }
   chips.forEach((c) => {
     const span = document.createElement("span");
-    span.className = `chip w-${c.type}`;
-    span.dataset.open = c.open || "";
+    span.className = ["chip", c.type ? `w-${c.type}` : "", c.className || ""]
+      .filter(Boolean)
+      .join(" ");
+    if (c.open) span.dataset.open = c.open;
+    if (c.action) span.dataset.promptAction = c.action;
+    if (c.prompt != null) span.dataset.prompt = c.prompt;
     span.title = c.title || "";
     span.textContent = c.label;
     row.appendChild(span);
   });
+}
+
+export function addPromptActions(msgEl, prompt) {
+  if (!msgEl || msgEl.querySelector("[data-prompt-action]")) return;
+  addChipsTo(msgEl, [
+    {
+      type: "action",
+      className: "action-rerun",
+      label: "↻ rerun",
+      action: "rerun",
+      prompt,
+      title: "Run this exact prompt again through the full pipeline.",
+    },
+    {
+      type: "action",
+      className: "action-edit",
+      label: "edit prompt",
+      action: "edit",
+      prompt,
+      title:
+        "Load this prompt into the composer so you can edit it and press Enter.",
+    },
+  ]);
 }
 
 export function clearHero() {

@@ -86,6 +86,19 @@
   border-color: var(--contextual);
   color: var(--contextual);
 }
+.chip.w-action {
+  border-style: dashed;
+  border-color: #ffd166;
+  color: #ffd166;
+}
+.chip.w-action.action-edit {
+  border-color: var(--muted);
+  color: var(--muted);
+}
+.chip.w-action:hover {
+  background: rgba(255, 209, 102, 0.1);
+  color: var(--text);
+}
 
 /* memory items */
 .mem-item {

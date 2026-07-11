@@ -41,6 +41,7 @@ import {
 import {
   addChatMsg,
   addChipsTo,
+  addPromptActions,
   clearHero,
   addAgentActivity,
   setActivity,
@@ -483,6 +484,7 @@ export async function handleSend() {
         "Step-by-step trace of this turn: retrieval scores, exact prompt, extraction output, and every write.",
     },
   ]);
+  addPromptActions(userMsgEl, text);
   stageNote(
     "write",
     `${written.length} write(s): ${written.map((w) => w.item.type + "/" + w.item.kind).join(", ")}`,

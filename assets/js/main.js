@@ -1,6 +1,12 @@
 /* Entry point: global event wiring and boot. */
 
-import { memory, settings, loadPersisted, persistSettings } from "./state.js";
+import {
+  memory,
+  settings,
+  runtime,
+  loadPersisted,
+  persistSettings,
+} from "./state.js";
 import { $ } from "./utils.js";
 import { handleSend, endSession, wipeAll } from "./pipeline.js";
 import { logEvent } from "./ui/log.js";
@@ -91,6 +97,38 @@ function handleDelegatedAction(e) {
       'Press Enter or click "send" to watch the Act stage use the right tool.',
       "success",
     );
+    return;
+  }
+  const promptAction = e.target.closest("[data-prompt-action]");
+  if (promptAction) {
+    const action = promptAction.dataset.promptAction;
+    const prompt = promptAction.dataset.prompt || "";
+    if (!claimActivation(e, `prompt:${action}:${prompt}`)) return;
+    const input = $("#input");
+    input.value = prompt;
+    input.focus();
+    if (action === "rerun") {
+      if (runtime.busy) {
+        showToast(
+          "Agent is still running",
+          "Try rerun again after the current turn finishes.",
+          "info",
+        );
+        return;
+      }
+      showToast(
+        "Rerunning prompt",
+        "Sending the same prompt through the full pipeline again.",
+        "success",
+      );
+      handleSend();
+    } else {
+      showToast(
+        "Prompt loaded",
+        "Edit it in the composer, then press Enter to send.",
+        "success",
+      );
+    }
   }
 }
 document.addEventListener("pointerup", handleDelegatedAction, true);
