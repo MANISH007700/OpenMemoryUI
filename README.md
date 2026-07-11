@@ -74,7 +74,7 @@ assets/js/
   ui/effects.js             pipeline stages, packets, flash animations
   ui/toolbox.js             searchable toolbox + MCP connector drawer
   ui/storage.js             localStorage fill/delete meter
-  ui/sound.js               synthesized ambient pad and event sounds
+  ui/sound.js               dim synthesized techno bed + response/tool tones
   ui/log.js                 the memory-bus log
   utils.js                  DOM shorthands, escaping, formatting
 ```
@@ -127,7 +127,7 @@ A "how it works" onboarding opens on first visit and stays available from the to
 - **export / import**: download every stored memory as one readable JSON file, and restore it later or on another machine. The glassbox promise extends to portability.
 - **forget this memory**: every memory's provenance drawer has a forget button - the agent genuinely no longer knows it afterwards.
 - **db meter**: click the footer storage meter to see what is filling localStorage and exactly what deletes from it.
-- **sound**: optional synthesized music and event sounds, off by default until you toggle it.
+- **sound**: optional dim techno music with response, tool, retrieval and write tones, off by default until you toggle it.
 - Press `/` anywhere to jump to the composer.
 
 ## How memory works here (the honest version)

@@ -5,6 +5,10 @@ import { $, esc } from "../utils.js";
 export function addChatMsg(role, content, chips = []) {
   const wrap = document.createElement("div");
   wrap.className = `msg ${role}`;
+  if (role === "agent") {
+    wrap.classList.add("just-arrived");
+    window.setTimeout(() => wrap.classList.remove("just-arrived"), 1800);
+  }
   const chipHtml = chips
     .map(
       (c) =>

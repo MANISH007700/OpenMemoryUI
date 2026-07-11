@@ -328,6 +328,7 @@ export async function handleSend() {
       ? `calling ${currentModel().split("/").pop()} via ${PROVIDERS[settings.provider].label}`
       : "demo model composing a reply",
   );
+  sfx.respondStart();
   runtime.lastPrompt = buildChatMessages(text, runtime.contextual, toolResults);
   trace.generate = {
     mode: settings.mode,
@@ -363,6 +364,7 @@ export async function handleSend() {
   trace.generate.ms = Math.round(performance.now() - genStart);
   trace.generate.replyTokens = estTokens(reply);
   const agentEl = addChatMsg("agent", reply);
+  sfx.response();
   const aTurn = {
     id: uid("t"),
     role: "agent",
@@ -389,6 +391,7 @@ export async function handleSend() {
 
   /* 5 · EXTRACT */
   setStage("extract", "mining the exchange for durable knowledge");
+  sfx.extract();
   let extraction;
   let dupesRejected = 0;
   let extractEngine = settings.mode === "live" ? "llm" : "heuristic";
@@ -486,6 +489,7 @@ export async function handleSend() {
   );
   await sleep(500);
   finishStages();
+  sfx.complete();
 
   // teaching moment: the context window is nearly full - real agents
   // consolidate at exactly this point
