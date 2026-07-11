@@ -27,6 +27,7 @@ import {
   dumpPrompt,
 } from "./llm.js";
 import { logEvent } from "./ui/log.js";
+import { showToast } from "./ui/toast.js";
 import {
   setStage,
   stageNote,
@@ -562,8 +563,20 @@ export function endSession() {
 }
 
 export function wipeAll() {
+  const counts = {
+    session: memory.session.length,
+    episodic: memory.episodic.length,
+    semantic: memory.semantic.length,
+    traces: memory.traces.length,
+  };
   resetMemory();
   runtime.budgetWarned = false;
   renderAll();
-  logEvent("info", "all memory stores wiped");
+  const detail = `${counts.session} session turn(s), ${counts.episodic} episode(s), ${counts.semantic} semantic memory item(s), ${counts.traces} trace(s) deleted.`;
+  logEvent("info", `all memory stores wiped - ${esc(detail)}`);
+  addChatMsg(
+    "system-note",
+    `Wipe complete. ${detail} The app is now starting from empty memory.`,
+  );
+  showToast("Wipe complete", detail, "danger");
 }

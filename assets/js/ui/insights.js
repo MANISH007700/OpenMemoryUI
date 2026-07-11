@@ -27,6 +27,21 @@ function funnelRows(rows) {
   );
 }
 
+function insightCards(cards) {
+  return `
+    <div class="insight-summary">
+      ${cards
+        .map(
+          (c) => `
+        <div class="insight-card">
+          <b>${c.n}</b>
+          <span>${esc(c.label)}</span>
+        </div>`,
+        )
+        .join("")}
+    </div>`;
+}
+
 function growthChartSVG() {
   const pts = [
     ...memory.semantic.map((i) => ({ at: i.createdAt, t: "s" })),
@@ -136,7 +151,8 @@ export function openInsights() {
   const actFunnelHtml =
     t && t.act
       ? `
-    <p style="margin-top:12px"><b>Act funnel</b> - what the orchestrator did before answering:</p>
+    <div class="funnel-block"><h5>Act funnel</h5>
+    <p class="dim">What the orchestrator did before answering.</p>
     ${funnelRows([
       {
         label: "planned tool calls",
@@ -156,14 +172,21 @@ export function openInsights() {
         color: "#f87693",
         title: "Tool calls that failed or were blocked by the remote service",
       },
-    ])}`
+    ])}</div>`
       : "";
 
   const lastTurnHtml = !t
-    ? `<p class="dim">Send a message first - the funnels trace your latest turn.</p>`
+    ? `<div class="empty-state"><b>No turn trace yet.</b><span>Send a message and this drawer will show exactly what was retrieved, which tools ran, and what was written.</span></div>`
     : `
     <p class="dim" style="margin-bottom:2px">Your last message: <i>"${esc(t.text.slice(0, 90))}${t.text.length > 90 ? "…" : ""}"</i></p>
-    <p style="margin-top:8px"><b>Retrieval funnel</b> - of everything in long-term memory, what made it into the prompt:</p>
+    ${insightCards([
+      { n: t.retrieve.picked, label: "memories injected into prompt" },
+      { n: toolCalls.length, label: "tool calls planned" },
+      { n: t.write.written.length, label: "memory writes committed" },
+      { n: rejected, label: "candidates rejected" },
+    ])}
+    <div class="funnel-block"><h5>Retrieval funnel</h5>
+    <p class="dim">Of everything in long-term memory, what made it into the prompt.</p>
     ${funnelRows([
       {
         label: "memories in long-term pool",
@@ -183,9 +206,10 @@ export function openInsights() {
         color: STORE_COLORS.contextual,
         title: "Top-k winners, sent to the model as RETRIEVED MEMORIES",
       },
-    ])}
+    ])}</div>
     ${actFunnelHtml}
-    <p style="margin-top:12px"><b>Write funnel</b> - of what the extractor proposed, what got stored:</p>
+    <div class="funnel-block"><h5>Write funnel</h5>
+    <p class="dim">Of what the extractor proposed, what got stored and what was rejected.</p>
     ${funnelRows([
       {
         label: "extraction candidates",
@@ -211,7 +235,7 @@ export function openInsights() {
         color: STORE_COLORS.episodic,
         title: "The exchange itself, always recorded as one episodic event",
       },
-    ])}
+    ])}</div>
     <p class="dim" style="margin-top:8px">Open the <b>full trace</b> chip under any of your messages for the step-by-step version with scores and the exact prompt.</p>`;
 
   const growth = growthChartSVG();
@@ -293,7 +317,7 @@ export function openInsights() {
   openDrawer(
     "Insights · funnels, graphs & keywords",
     `
-    <div class="d-section"><h4>Last turn - where things went</h4>${lastTurnHtml}</div>
+    <div class="d-section"><h4>Latest turn - where things went</h4>${lastTurnHtml}</div>
     <div class="d-section"><h4>Memory growth over time (cumulative)</h4>${growthHtml}</div>
     <div class="d-section"><h4>What is stored, by kind</h4>${kindHtml}</div>
     <div class="d-section"><h4>Most recalled memories</h4>${recalledHtml}</div>

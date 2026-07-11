@@ -12,7 +12,7 @@ import {
   openSessionTurn,
   openXray,
 } from "./ui/drawer.js";
-import { initWelcome, showWelcome } from "./ui/welcome.js";
+import { closeWelcome, initWelcome, showWelcome } from "./ui/welcome.js";
 import { openInsights, openTrace } from "./ui/insights.js";
 import {
   setMode,
@@ -25,13 +25,37 @@ import { exportMemory, importMemoryFile, forgetItem } from "./ui/data.js";
 import { openToolbox } from "./ui/toolbox.js";
 import { initSound, toggleSound } from "./ui/sound.js";
 import { initStorage } from "./ui/storage.js";
+import { showToast } from "./ui/toast.js";
 import { initMcp } from "./mcp.js";
 import { PROVIDERS } from "./config.js";
 
+let lastActivation = { key: "", at: 0, type: "" };
+
+function claimActivation(e, key) {
+  const at = Date.now();
+  const type = e?.type || "programmatic";
+  if (
+    type === "click" &&
+    lastActivation.type === "pointerup" &&
+    lastActivation.key === key &&
+    at - lastActivation.at < 350
+  ) {
+    e?.preventDefault();
+    e?.stopPropagation();
+    return false;
+  }
+  lastActivation = { key, at, type };
+  e?.preventDefault();
+  e?.stopPropagation();
+  return true;
+}
+
 /* ---- delegated clicks: provenance links, explainers, try-it fills ---- */
-document.addEventListener("click", (e) => {
+function handleDelegatedAction(e) {
+  if (e.type === "pointerup" && e.button !== 0) return;
   const opener = e.target.closest("[data-open]");
   if (opener && opener.dataset.open) {
+    if (!claimActivation(e, `open:${opener.dataset.open}`)) return;
     const [kind, id] = opener.dataset.open.split(":");
     if (kind === "item") openItem(id);
     else if (kind === "session") openSessionTurn(id);
@@ -41,11 +65,13 @@ document.addEventListener("click", (e) => {
   }
   const explainBtn = e.target.closest("[data-explain]");
   if (explainBtn) {
+    if (!claimActivation(e, `explain:${explainBtn.dataset.explain}`)) return;
     openExplainer(explainBtn.dataset.explain);
     return;
   }
   const forget = e.target.closest("[data-forget]");
   if (forget) {
+    if (!claimActivation(e, `forget:${forget.dataset.forget}`)) return;
     if (
       confirm(
         "Forget this memory permanently? The agent will no longer know it.",
@@ -56,11 +82,19 @@ document.addEventListener("click", (e) => {
   }
   const fill = e.target.closest("[data-fill]");
   if (fill) {
+    if (!claimActivation(e, `fill:${fill.dataset.fill}`)) return;
     $("#input").value = fill.dataset.fill;
     if (fill.closest("#drawer")) closeDrawer(); // e.g. a toolbox "try" button
     $("#input").focus();
+    showToast(
+      "Example loaded",
+      'Press Enter or click "send" to watch the Act stage use the right tool.',
+      "success",
+    );
   }
-});
+}
+document.addEventListener("pointerup", handleDelegatedAction, true);
+document.addEventListener("click", handleDelegatedAction, true);
 $("#drawerClose").addEventListener("click", closeDrawer);
 $("#overlay").addEventListener("click", closeDrawer);
 document.addEventListener("keydown", (e) => {
@@ -88,29 +122,66 @@ $("#input").addEventListener("keydown", (e) => {
 });
 
 /* ---- top bar ---- */
-$("#endSessionBtn").addEventListener("click", endSession);
-$("#exportBtn").addEventListener("click", exportMemory);
-$("#importBtn").addEventListener("click", () => $("#importFile").click());
+function dismissIntro() {
+  if (!$("#welcome").hidden) closeWelcome();
+}
+
+const TOPBAR_ACTIONS = new Set([
+  "endSessionBtn",
+  "exportBtn",
+  "importBtn",
+  "wipeBtn",
+  "xrayBtn",
+  "insightsBtn",
+  "toolboxBtn",
+  "howBtn",
+  "soundBtn",
+  "clapBtn",
+]);
+
+function runTopbarAction(id, e) {
+  if (!TOPBAR_ACTIONS.has(id)) return false;
+  if (!claimActivation(e, `topbar:${id}`)) return true;
+  if (id !== "howBtn") dismissIntro();
+
+  if (id === "endSessionBtn") endSession();
+  else if (id === "exportBtn") exportMemory();
+  else if (id === "importBtn") $("#importFile").click();
+  else if (id === "wipeBtn") {
+    if (
+      !confirm(
+        'Erase ALL memories (session, episodic, semantic) and turn traces? This cannot be undone.\n\nTip: press "export" first if you want a backup.',
+      )
+    ) {
+      showToast("Wipe cancelled", "No memories were deleted.", "info");
+      return true;
+    }
+    wipeAll();
+  } else if (id === "xrayBtn") openXray();
+  else if (id === "insightsBtn") openInsights();
+  else if (id === "toolboxBtn") openToolbox();
+  else if (id === "howBtn") showWelcome();
+  else if (id === "soundBtn") toggleSound();
+  else if (id === "clapBtn") clap();
+
+  return true;
+}
+
+function handleTopbarActivation(e) {
+  if (e.type === "pointerup" && e.button !== 0) return;
+  const btn = e.target.closest("#topbar button, #clapBtn");
+  if (!btn) return;
+  runTopbarAction(btn.id, e);
+}
+
+document.addEventListener("pointerup", handleTopbarActivation, true);
+document.addEventListener("click", handleTopbarActivation, true);
+
 $("#importFile").addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (file) importMemoryFile(file);
   e.target.value = ""; // allow re-importing the same file
 });
-$("#wipeBtn").addEventListener("click", () => {
-  if (
-    !confirm(
-      'Erase ALL memories (session, episodic, semantic) and turn traces? This cannot be undone.\n\nTip: press "export" first if you want a backup.',
-    )
-  )
-    return;
-  wipeAll();
-});
-$("#xrayBtn").addEventListener("click", openXray);
-$("#insightsBtn").addEventListener("click", openInsights);
-$("#toolboxBtn").addEventListener("click", openToolbox);
-$("#howBtn").addEventListener("click", showWelcome);
-$("#soundBtn").addEventListener("click", toggleSound);
-$("#clapBtn").addEventListener("click", clap);
 
 $("#modeDemo").addEventListener("click", () => setMode("demo"));
 $("#modeLive").addEventListener("click", () => setMode("live"));

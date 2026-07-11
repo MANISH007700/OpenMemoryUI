@@ -47,20 +47,20 @@ export function showWelcome() {
   $("#welcome").hidden = false;
 }
 
-function close() {
+export function closeWelcome() {
   settings.hideWelcome = $("#welcomeDontShow").checked;
   persistSettings();
   $("#welcome").hidden = true;
 }
 
 export function initWelcome() {
-  $("#welcomeClose").addEventListener("click", close);
+  $("#welcomeClose").addEventListener("click", closeWelcome);
   $("#welcomeStart").addEventListener("click", () => {
-    close();
+    closeWelcome();
     $("#input").focus();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !$("#welcome").hidden) close();
+    if (e.key === "Escape" && !$("#welcome").hidden) closeWelcome();
   });
   if (!settings.hideWelcome) showWelcome();
 }

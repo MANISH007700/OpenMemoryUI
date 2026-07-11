@@ -4,13 +4,16 @@
 
 import { settings, persistSettings } from "../state.js";
 import { $ } from "../utils.js";
+import { showToast } from "./toast.js";
 
 let ctx = null;
 let ambient = null; // {oscs, gain, timer}
 
-function ensureCtx() {
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (ctx.state === "suspended") ctx.resume();
+async function ensureCtx() {
+  const AudioCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtor) throw new Error("WebAudio is not available in this browser");
+  if (!ctx) ctx = new AudioCtor();
+  if (ctx.state === "suspended") await ctx.resume();
   return ctx;
 }
 
@@ -42,6 +45,11 @@ export const sfx = {
   },
   tool: () => blip(311, 0.1, "square", 0.025),
   error: () => blip(130, 0.25, "sawtooth", 0.04),
+  preview: () => {
+    blip(440, 0.12, "sine", 0.09);
+    blip(660, 0.14, "triangle", 0.07, 0.09);
+    blip(880, 0.16, "sine", 0.06, 0.2);
+  },
   clap: () => {
     blip(740, 0.06, "triangle", 0.05);
     blip(988, 0.08, "triangle", 0.04, 0.05);
@@ -54,7 +62,7 @@ function startAmbient() {
   if (ambient || !ctx) return;
   const gain = ctx.createGain();
   gain.gain.value = 0;
-  gain.gain.linearRampToValueAtTime(0.012, ctx.currentTime + 3);
+  gain.gain.linearRampToValueAtTime(0.024, ctx.currentTime + 2.4);
   const filter = ctx.createBiquadFilter();
   filter.type = "lowpass";
   filter.frequency.value = 520;
@@ -86,18 +94,38 @@ function stopAmbient() {
 }
 
 function renderBtn() {
-  $("#soundBtn").textContent = settings.soundOn ? "🔊 sound" : "🔇 sound";
+  const btn = $("#soundBtn");
+  btn.textContent = settings.soundOn ? "music on" : "music off";
+  btn.classList.toggle("on", settings.soundOn);
+  btn.setAttribute("aria-pressed", settings.soundOn ? "true" : "false");
 }
 
-export function toggleSound() {
-  settings.soundOn = !settings.soundOn;
-  persistSettings();
-  if (settings.soundOn) {
-    ensureCtx();
+export async function toggleSound() {
+  const next = !settings.soundOn;
+  if (next) {
+    try {
+      await ensureCtx();
+    } catch (e) {
+      settings.soundOn = false;
+      persistSettings();
+      renderBtn();
+      showToast("Music could not start", e.message, "error");
+      return;
+    }
+    settings.soundOn = true;
+    persistSettings();
     startAmbient();
-    sfx.retrieve(); // audible confirmation
+    sfx.preview(); // audible confirmation
+    showToast(
+      "Music on",
+      "Ambient pad and memory/tool event sounds are active.",
+      "success",
+    );
   } else {
+    settings.soundOn = false;
+    persistSettings();
     stopAmbient();
+    showToast("Music off", "Ambient pad and event sounds are paused.", "info");
   }
   renderBtn();
 }
@@ -106,8 +134,8 @@ export function initSound() {
   renderBtn();
   // a saved "on" preference still needs a user gesture to unlock audio
   if (settings.soundOn) {
-    const unlock = () => {
-      ensureCtx();
+    const unlock = async () => {
+      await ensureCtx();
       startAmbient();
       document.removeEventListener("pointerdown", unlock);
     };
