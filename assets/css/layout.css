@@ -357,15 +357,23 @@
 .mem-panel[data-type="session"] {
   grid-area: session;
   max-height: 210px;
+  --mem-accent: var(--session);
+  --mem-accent-rgb: 111, 211, 255;
 }
 .mem-panel[data-type="episodic"] {
   grid-area: episodic;
+  --mem-accent: var(--episodic);
+  --mem-accent-rgb: 255, 180, 84;
 }
 .mem-panel[data-type="semantic"] {
   grid-area: semantic;
+  --mem-accent: var(--semantic);
+  --mem-accent-rgb: 167, 139, 250;
 }
 .mem-panel[data-type="contextual"] {
   grid-area: contextual;
+  --mem-accent: var(--contextual);
+  --mem-accent-rgb: 87, 230, 196;
 }
 .mem-panel.flash-session {
   border-color: var(--session);
@@ -389,7 +397,14 @@
   align-items: center;
   gap: 8px;
   padding: 9px 12px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(var(--mem-accent-rgb), 0.38);
+  background: linear-gradient(
+      90deg,
+      rgba(var(--mem-accent-rgb), 0.2),
+      rgba(var(--mem-accent-rgb), 0.08) 46%,
+      rgba(var(--mem-accent-rgb), 0.025)
+    ),
+    var(--panel);
   flex: none;
 }
 .mem-head .swatch {
@@ -397,17 +412,20 @@
   height: 9px;
   border-radius: 2px;
   flex: none;
+  box-shadow: 0 0 12px rgba(var(--mem-accent-rgb), 0.72);
 }
 .mem-head h2 {
   font-family: var(--display);
   font-size: 13.5px;
   font-weight: 600;
   letter-spacing: 0.3px;
+  color: var(--text);
 }
 .mem-head .sub {
   font-family: var(--mono);
   font-size: 10px;
-  color: var(--faint);
+  color: var(--muted);
+  color: color-mix(in srgb, var(--mem-accent) 50%, var(--muted));
   letter-spacing: 0.6px;
   white-space: nowrap;
   overflow: hidden;
@@ -417,9 +435,9 @@
   margin-left: auto;
   font-family: var(--mono);
   font-size: 10.5px;
-  color: var(--muted);
-  background: var(--ink);
-  border: 1px solid var(--line);
+  color: var(--mem-accent);
+  background: rgba(var(--mem-accent-rgb), 0.1);
+  border: 1px solid rgba(var(--mem-accent-rgb), 0.42);
   padding: 1px 7px;
   border-radius: 999px;
   flex: none;
@@ -429,9 +447,9 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
+  border: 1px solid rgba(var(--mem-accent-rgb), 0.42);
+  background: rgba(var(--mem-accent-rgb), 0.08);
+  color: var(--mem-accent);
   font-family: var(--mono);
   font-size: 11px;
   line-height: 1;
