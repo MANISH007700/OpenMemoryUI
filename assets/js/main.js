@@ -27,6 +27,7 @@ import {
   syncModelSelection,
 } from "./ui/settings.js";
 import { initClaps, clap } from "./ui/claps.js";
+import { initVisits } from "./ui/visits.js";
 import { exportMemory, importMemoryFile, forgetItem } from "./ui/data.js";
 import { openToolbox } from "./ui/toolbox.js";
 import { initSound, toggleSound } from "./ui/sound.js";
@@ -267,6 +268,7 @@ setProvider(settings.provider);
 setMode(settings.mode);
 renderAll();
 initClaps();
+initVisits();
 initSound();
 initStorage();
 initMcp();
